@@ -645,8 +645,15 @@ const subscribeToUpdates = () => {
           .map(userId => participants.value.find(p => p.user_id === userId))
           .filter(p => p)
       }
-      if (payload.new.game_start_time) {
+      
+      // IMMEDIATE RECALCULATION when game_start_time changes
+      if (payload.new.game_start_time && payload.new.game_start_time !== gameStartTime.value) {
         gameStartTime.value = payload.new.game_start_time
+        
+        // Recalculate speaker index immediately (no waiting for timer interval)
+        if (room.value.status === 'IN_PROGRESS') {
+          recalculateSpeakerIndex()
+        }
       }
       
       if (payload.new.status === 'VOTING') {
@@ -709,28 +716,38 @@ const subscribeToUpdates = () => {
     .subscribe()
 }
 
+// Helper function to recalculate current speaker index based on elapsed time
+const recalculateSpeakerIndex = () => {
+  if (!gameStartTime.value || !room.value || room.value.status !== 'IN_PROGRESS') return
+  
+  const startTime = new Date(gameStartTime.value)
+  const elapsed = Math.floor((Date.now() - startTime) / 1000)
+  const timePerPlayer = room.value.discussion_time
+  const totalElapsed = elapsed - (extendCount.value * 30)
+  const calculatedSpeakerIndex = Math.floor(totalElapsed / timePerPlayer)
+  
+  // Update speaker index if changed and within bounds
+  if (calculatedSpeakerIndex !== currentSpeakerIndex.value && calculatedSpeakerIndex < speakerOrder.value.length) {
+    currentSpeakerIndex.value = calculatedSpeakerIndex
+    console.log(`🔄 Speaker index synced to ${calculatedSpeakerIndex} (${currentSpeaker.value?.users?.full_name})`)
+  }
+  
+  // Update time left for current speaker
+  const elapsedForCurrentSpeaker = totalElapsed - (currentSpeakerIndex.value * timePerPlayer)
+  speakTimeLeft.value = Math.max(0, timePerPlayer - elapsedForCurrentSpeaker)
+  
+  // Update overall time left
+  const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
+  timeLeft.value = Math.max(0, maxTime - elapsed)
+}
+
 const startTimer = () => {
   timerInterval = setInterval(() => {
     if (!room.value || !gameStartTime.value) return
     
     if (room.value.status === 'IN_PROGRESS') {
-      // Turn-based timer: track time for current speaker
-      const startTime = new Date(gameStartTime.value)
-      const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      
-      // Calculate which speaker's turn it is based on elapsed time
-      const timePerPlayer = room.value.discussion_time
-      const totalElapsed = elapsed - (extendCount.value * 30)
-      const calculatedSpeakerIndex = Math.floor(totalElapsed / timePerPlayer)
-      
-      // Update speaker index if changed
-      if (calculatedSpeakerIndex !== currentSpeakerIndex.value && calculatedSpeakerIndex < speakerOrder.value.length) {
-        currentSpeakerIndex.value = calculatedSpeakerIndex
-      }
-      
-      // Time left for current speaker
-      const elapsedForCurrentSpeaker = totalElapsed - (currentSpeakerIndex.value * timePerPlayer)
-      speakTimeLeft.value = Math.max(0, timePerPlayer - elapsedForCurrentSpeaker)
+      // Recalculate speaker index and timers
+      recalculateSpeakerIndex()
       
       // Check if all speakers finished
       if (currentSpeakerIndex.value >= speakerOrder.value.length) {
@@ -738,10 +755,6 @@ const startTimer = () => {
           startVoting()
         }
       }
-      
-      // Overall time left
-      const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
-      timeLeft.value = Math.max(0, maxTime - elapsed)
     } else if (room.value.status === 'VOTING' && votingStartTime.value) {
       const startTime = new Date(votingStartTime.value)
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
