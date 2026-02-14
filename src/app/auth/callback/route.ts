@@ -18,7 +18,7 @@ export async function GET(request: Request) {
           email: data.user.email,
           display_name: data.user.user_metadata.full_name || data.user.email?.split('@')[0] || 'Anonymous',
           avatar_url: data.user.user_metadata.avatar_url || null,
-        })
+        } as any)
 
       if (profileError) {
         console.error('Error creating user profile:', profileError)
