@@ -22,8 +22,8 @@
             <span class="font-bold ml-2">{{ participants.length }}/{{ room?.max_players }}</span>
           </div>
           <div>
-            <span class="text-gray-400">Rounds:</span>
-            <span class="font-bold ml-2">{{ room?.rounds }}</span>
+            <span class="text-gray-400">Impostors:</span>
+            <span class="font-bold ml-2">{{ room?.impostor_count || 2 }}</span>
           </div>
           <div>
             <span class="text-gray-400">Discussion:</span>
@@ -33,11 +33,6 @@
             <span class="text-gray-400">Voting:</span>
             <span class="font-bold ml-2">{{ room?.voting_time }}s</span>
           </div>
-        </div>
-        
-        <div v-if="room?.topic" class="mt-4">
-          <span class="text-gray-400">Topic:</span>
-          <span class="font-bold ml-2">{{ room.topic }}</span>
         </div>
       </div>
 
@@ -67,7 +62,7 @@
         <button 
           v-if="isHost"
           @click="startGame"
-          :disabled="participants.length < 4 || loading"
+          :disabled="participants.length < 3 || loading"
           class="bg-green-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition disabled:opacity-50"
         >
           {{ loading ? 'Starting...' : 'Start Game' }}
@@ -81,12 +76,12 @@
         </button>
       </div>
 
-      <p v-if="!isHost && participants.length >= 4" class="text-center text-gray-400 mt-4">
+      <p v-if="!isHost && participants.length >= 3" class="text-center text-gray-400 mt-4">
         Waiting for host to start the game...
       </p>
       
-      <p v-if="participants.length < 4" class="text-center text-yellow-400 mt-4">
-        Need at least 4 players to start ({{ 4 - participants.length }} more needed)
+      <p v-if="participants.length < 3" class="text-center text-yellow-400 mt-4">
+        Need at least 3 players to start ({{ 3 - participants.length }} more needed)
       </p>
     </div>
   </div>
@@ -96,6 +91,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { getRandomWordPair } from '@/lib/wordPairs'
 
 const route = useRoute()
 const router = useRouter()
@@ -185,26 +181,25 @@ const startGame = async () => {
   loading.value = true
   
   try {
-    // Create first game round
-    const { data: round } = await supabase
-      .from('game_rounds')
-      .insert({
-        room_id: room.value.id,
-        round_number: 1,
-        status: 'DISCUSSION'
-      })
-      .select()
-      .single()
+    // Get random word pair
+    const wordPair = getRandomWordPair()
     
-    // Select random imposter
-    const randomIndex = Math.floor(Math.random() * participants.value.length)
-    const imposterId = participants.value[randomIndex].user_id
+    // Select random impostors
+    const shuffled = [...participants.value].sort(() => Math.random() - 0.5)
+    const impostorCount = room.value.impostor_count || 2
+    const impostorIds = shuffled.slice(0, impostorCount).map(p => p.user_id)
     
-    // Update all participants with imposter status
+    // Assign words to all participants
     for (const participant of participants.value) {
+      const isImpostor = impostorIds.includes(participant.user_id)
+      const word = isImpostor ? wordPair.impostor : wordPair.normal
+      
       await supabase
         .from('room_participants')
-        .update({ is_imposter: participant.user_id === imposterId })
+        .update({ 
+          is_imposter: isImpostor,
+          word: word
+        })
         .eq('id', participant.id)
     }
     
@@ -212,13 +207,13 @@ const startGame = async () => {
     await supabase
       .from('rooms')
       .update({ 
-        status: 'IN_PROGRESS',
-        current_round: 1
+        status: 'IN_PROGRESS'
       })
       .eq('id', room.value.id)
     
     router.push(`/game/${code}`)
   } catch (error) {
+    console.error('Error starting game:', error)
     alert('Error starting game: ' + error.message)
   } finally {
     loading.value = false

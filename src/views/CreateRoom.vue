@@ -17,62 +17,75 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Max Players (4-10)</label>
+          <label class="block text-sm font-medium mb-2">
+            Max Players: {{ maxPlayers }}
+            <span class="text-gray-400 text-xs ml-2">(min: 3)</span>
+          </label>
           <input 
             v-model.number="maxPlayers"
-            type="number"
-            min="4"
+            type="range"
+            min="3"
             max="10"
-            required
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none"
+            class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
           />
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>3</span>
+            <span>10</span>
+          </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Discussion Time (seconds)</label>
+          <label class="block text-sm font-medium mb-2">
+            Impostor Count: {{ impostorCount }}
+          </label>
+          <input 
+            v-model.number="impostorCount"
+            type="range"
+            min="1"
+            :max="Math.max(1, Math.floor(maxPlayers / 2))"
+            class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+          />
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>1</span>
+            <span>{{ Math.floor(maxPlayers / 2) }}</span>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">Max: half of max players</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">
+            Discussion Time: {{ discussionTime }}s
+          </label>
           <input 
             v-model.number="discussionTime"
-            type="number"
+            type="range"
             min="30"
             max="300"
-            required
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none"
+            step="30"
+            class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
           />
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>30s</span>
+            <span>5min</span>
+          </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Voting Time (seconds)</label>
+          <label class="block text-sm font-medium mb-2">
+            Voting Time: {{ votingTime }}s
+          </label>
           <input 
             v-model.number="votingTime"
-            type="number"
+            type="range"
             min="20"
             max="120"
-            required
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none"
+            step="10"
+            class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
           />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">Number of Rounds</label>
-          <input 
-            v-model.number="rounds"
-            type="number"
-            min="1"
-            max="10"
-            required
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">Topic (Optional)</label>
-          <input 
-            v-model="topic"
-            type="text"
-            maxlength="50"
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none"
-            placeholder="e.g., Animals, Countries, Food"
-          />
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>20s</span>
+            <span>2min</span>
+          </div>
         </div>
 
         <div class="flex items-center">
@@ -105,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 
@@ -113,12 +126,19 @@ const router = useRouter()
 
 const roomName = ref('')
 const maxPlayers = ref(8)
+const impostorCount = ref(2)
 const discussionTime = ref(120)
 const votingTime = ref(60)
-const rounds = ref(3)
-const topic = ref('')
 const voiceChatEnabled = ref(true)
 const loading = ref(false)
+
+// Watch maxPlayers to adjust impostorCount if needed
+watch(maxPlayers, (newMax) => {
+  const maxImpostors = Math.floor(newMax / 2)
+  if (impostorCount.value > maxImpostors) {
+    impostorCount.value = maxImpostors
+  }
+})
 
 const generateRoomCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -134,6 +154,13 @@ const createRoom = async () => {
   
   try {
     const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session?.user) {
+      alert('Please sign in first!')
+      router.push('/')
+      return
+    }
+    
     const roomCode = generateRoomCode()
     
     const { data: room, error: roomError } = await supabase
@@ -142,13 +169,14 @@ const createRoom = async () => {
         code: roomCode,
         name: roomName.value,
         host_id: session.user.id,
+        min_players: 3, // Always 3
         max_players: maxPlayers.value,
+        impostor_count: impostorCount.value,
         discussion_time: discussionTime.value,
         voting_time: votingTime.value,
-        rounds: rounds.value,
-        topic: topic.value || null,
         voice_chat_enabled: voiceChatEnabled.value,
-        status: 'WAITING'
+        status: 'WAITING',
+        topic: null // Random, no selection
       })
       .select()
       .single()
@@ -156,17 +184,49 @@ const createRoom = async () => {
     if (roomError) throw roomError
     
     // Add host as participant
-    await supabase.from('room_participants').insert({
-      room_id: room.id,
-      user_id: session.user.id,
-      is_host: true
-    })
+    const { error: participantError } = await supabase
+      .from('room_participants')
+      .insert({
+        room_id: room.id,
+        user_id: session.user.id,
+        is_host: true
+      })
+    
+    if (participantError) throw participantError
     
     router.push(`/lobby/${roomCode}`)
   } catch (error) {
+    console.error('Create room error:', error)
     alert('Error creating room: ' + error.message)
   } finally {
     loading.value = false
   }
 }
 </script>
+
+<style scoped>
+/* Custom slider styling */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #a855f7;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #a855f7;
+  cursor: pointer;
+  border: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #a855f7 0%, #a855f7 var(--value), rgba(255,255,255,0.2) var(--value), rgba(255,255,255,0.2) 100%);
+  height: 8px;
+  border-radius: 4px;
+}
+</style>
