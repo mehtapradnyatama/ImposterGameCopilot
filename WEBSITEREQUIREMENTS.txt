@@ -1,0 +1,196 @@
+I need you to build a complete multiplayer web game called "Imposter Word Game" (like Among Us but with words) that can be deployed to Vercel. Here are the full requirements:
+Tech Stack
+
+Frontend: Next.js 14 (App Router), TypeScript, Tailwind CSS
+Backend: Supabase (PostgreSQL database + Realtime + Auth)
+Authentication: Google Sign-In via Supabase Auth
+Voice Chat: WebRTC with Push-to-Talk (like Among Us)
+Real-time: Supabase Realtime for chat, game state, voting
+Deployment: Vercel
+
+
+Core Features
+1. Authentication & User Profile
+
+Google OAuth login via Supabase
+Store user data: id, email, display name, profile picture (from Google)
+Auto-create user profile on first login
+Persistent login session
+
+2. Room System
+Create Room:
+
+Generate unique 6-character room code (e.g., "ABC123")
+Host sets:
+
+Min/max players (e.g., 4-10 players)
+Round timer (in seconds: 60, 90, 120, 180, 300)
+Topic selection (dropdown)
+
+
+Room status: WAITING, IN_PROGRESS, FINISHED
+
+Join Room:
+
+Enter room code to join
+Show lobby with list of joined players (name + avatar)
+Real-time updates when players join/leave
+Host can start game when min players reached
+
+Room Roles:
+
+First player = Host (can start game)
+Other players = Participants
+
+3. Game Topics & Word Database
+Create word lists for 4 topics:
+Topic 1: Parfum/Fragrance
+Words: Oud, Vanilla, Musk, Citrus, Rose, Amber, Bergamot, Sandalwood, Patchouli, Lavender, Jasmine, Cedar, Vetiver, Tonka Bean, Ylang-Ylang, Neroli, Iris, Leather, Tobacco, Aquatic
+Topic 2: Game Online
+Words: Valorant, Mobile Legends, PUBG, Free Fire, Genshin Impact, Dota 2, League of Legends, Overwatch, Apex Legends, Fortnite, CS:GO, Minecraft, Roblox, Call of Duty, Among Us, Fall Guys, Rocket League, FIFA, Clash Royale, Brawl Stars
+Topic 3: Formula 1
+Words: Max Verstappen, Lewis Hamilton, Ferrari, Mercedes, Red Bull, McLaren, Silverstone, Monza, Monaco, Spa, DRS, Pit Stop, Pole Position, Safety Car, Podium, Championship, Sprint Race, Qualifying, Tire Strategy, Undercut
+Topic 4: Umum (General Daily Words)
+Words: Meja, Kursi, Laptop, Handphone, Kopi, Nasi, Mobil, Motor, Sepatu, Tas, Buku, Pensil, Kulkas, Televisi, Lampu, Pintu, Jendela, Kasur, Bantal, Piring
+4. Gameplay Flow
+Phase 1: Lobby (WAITING)
+
+Show all joined players
+Host controls "Start Game" button
+Display room settings (timer, topic, max players)
+
+Phase 2: Game Start (IN_PROGRESS)
+
+System randomly selects 1 player as IMPOSTER
+All normal players get the SAME word (randomly selected from chosen topic)
+Imposter gets a card that says "IMPOSTER" (not the real word)
+Each player sees their own word/role on screen
+Start countdown timer based on room settings
+
+Phase 3: Discussion (with Timer)
+
+Countdown timer visible to all
+Players use voice chat (Push-to-Talk) and text chat to discuss
+Players try to find the imposter by asking questions
+Timer shows warning at 10 seconds remaining (play sound effect)
+When timer ends, move to voting phase
+
+Phase 4: Voting
+
+Each player votes for who they think is the imposter
+Can't vote for yourself
+Show voting UI with player avatars/names
+Submit vote once
+After all votes submitted OR 30-second timeout, show results
+
+Phase 5: Results
+
+Display voting results (who voted for whom)
+Reveal who the actual imposter was
+Award points:
+
+If imposter NOT caught (didn't get majority votes): Imposter gets +2 points
+If imposter caught: All normal players who voted correctly get +2 points
+Losers get 0 points
+
+
+Update leaderboard
+Host can start new round or end game
+
+5. Voice Chat (Push-to-Talk)
+
+Use WebRTC for peer-to-peer audio streaming
+Push-to-Talk: Hold SPACEBAR or click/hold button to transmit audio
+Visual indicator shows who is currently speaking (green border around avatar)
+Mute/unmute toggle
+Volume control
+Works during Discussion Phase only (disable during voting/results)
+Need STUN server configuration (use free Google STUN servers)
+
+6. Text Chat
+
+Real-time text chat using Supabase Realtime
+Shows in sidebar during game
+Display username + timestamp
+Auto-scroll to latest message
+Persist chat history for current game session only
+
+7. Voting System
+
+UI shows all players as clickable cards
+Click player to vote
+Can change vote before submitting
+"Submit Vote" button
+After submission, show "Waiting for others..." status
+When all votes in, show results table:
+
+Player Name | Votes Received | Was Imposter?
+
+
+Highlight imposter in red
+
+8. Scoring & Leaderboard
+Scoring Rules:
+
+Imposter wins (not caught): +2 points
+Normal player wins (voted imposter correctly): +2 points
+Lose: 0 points
+
+Leaderboard:
+
+Global Leaderboard (all users, all-time total points)
+Room Leaderboard (current session only)
+Display: Rank, Username, Avatar, Total Points
+Sort by points descending
+
+9. Sound Effects
+Generate sound effects using ElevenLabs API or FreeSound API. Events needing sounds:
+
+Player joins room: cheerful notification
+Game starts: dramatic countdown
+10 seconds warning: urgent beeping
+Voting phase: gavel knock
+Reveal imposter: suspenseful drum roll
+Victory: fanfare
+Defeat: sad trombone
+Push-to-talk activated: quick click/beep
+
+If using ElevenLabs, use short TTS announcements like "Player joined!", "Ten seconds!", "Voting time!", etc.
+
+Supabase Setup:
+
+Enable Google OAuth in Supabase Auth settings
+Set redirect URLs for Vercel domain
+Enable Realtime for relevant tables
+Set up RLS policies for security
+
+Next.js Config:
+
+Enable App Router
+Configure Image domains for Google avatars
+WebRTC STUN server config
+
+
+Additional Requirements
+
+Responsive design (works on mobile & desktop)
+Dark mode UI (easier on eyes for gaming)
+Loading states for all async operations
+Error handling for network issues, full rooms, etc.
+Room cleanup: Auto-delete rooms after 24 hours of inactivity
+Reconnection logic: If player disconnects, allow rejoin with same room code
+Visual polish: Smooth animations, hover effects, modern UI
+
+
+Deliverables
+Please provide:
+
+Complete Next.js project structure
+All component files
+Supabase schema SQL
+API routes for server functions
+Environment variables template (.env.example)
+README with setup instructions
+Deployment guide for Vercel
+
+Build this as a production-ready app with clean code, proper TypeScript types, and good UX. Let me know if you need any clarifications!
