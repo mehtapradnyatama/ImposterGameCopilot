@@ -273,13 +273,14 @@ const startGame = async () => {
       .sort(() => Math.random() - 0.5)
       .map(p => p.user_id)
     
-    // Update room status with speaker order and start time
+    // Update room status with speaker order, start time, and initial index
     await supabase
       .from('rooms')
       .update({ 
         status: 'IN_PROGRESS',
         speaker_order: speakerOrder,
-        game_start_time: new Date().toISOString()
+        game_start_time: new Date().toISOString(),
+        current_speaker_index: 0
       })
       .eq('id', room.value.id)
     

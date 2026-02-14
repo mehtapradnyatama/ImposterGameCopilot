@@ -565,6 +565,11 @@ const loadGameData = async () => {
     room.value = roomData
     gameStartTime.value = roomData.game_start_time || roomData.created_at
     
+    // Load current speaker index from database
+    if (roomData.current_speaker_index !== undefined) {
+      currentSpeakerIndex.value = roomData.current_speaker_index
+    }
+    
     console.log('2. Loading participants for room:', roomData.id);
     
     // Load participants
@@ -638,15 +643,13 @@ const subscribeToUpdates = () => {
       filter: `id=eq.${room.value.id}`
     }, async (payload) => {
       console.group('🔔 REALTIME: Room Updated');
-      console.log('Old game_start_time:', gameStartTime.value);
-      console.log('New game_start_time:', payload.new.game_start_time);
-      console.log('Are they different?', payload.new.game_start_time !== gameStartTime.value);
+      console.log('Old speaker index:', currentSpeakerIndex.value);
+      console.log('New speaker index:', payload.new.current_speaker_index);
       console.log('Room status:', payload.new.status);
-      console.log('Full payload.new:', payload.new);
       
       room.value = payload.new
       
-      // Update speaker order and start time when room updates
+      // Update speaker order when room updates
       if (payload.new.speaker_order && Array.isArray(payload.new.speaker_order)) {
         console.log('📋 Speaker order updated:', payload.new.speaker_order);
         speakerOrder.value = payload.new.speaker_order
@@ -654,17 +657,23 @@ const subscribeToUpdates = () => {
           .filter(p => p)
       }
       
-      // IMMEDIATE RECALCULATION when game_start_time changes
-      if (payload.new.game_start_time && payload.new.game_start_time !== gameStartTime.value) {
-        console.log('⚡ game_start_time changed! Recalculating speaker...');
-        gameStartTime.value = payload.new.game_start_time
+      // DIRECT speaker index update from database (like voting system)
+      if (payload.new.current_speaker_index !== undefined && payload.new.current_speaker_index !== currentSpeakerIndex.value) {
+        console.log('⚡ Speaker index changed! Updating to:', payload.new.current_speaker_index);
+        currentSpeakerIndex.value = payload.new.current_speaker_index
+        console.log('🎯 NOW SPEAKING:', currentSpeaker.value?.users?.full_name);
         
-        // Recalculate speaker index immediately (no waiting for timer interval)
-        if (room.value.status === 'IN_PROGRESS') {
-          recalculateSpeakerIndex()
-        }
-      } else {
-        console.log('⏭️ game_start_time not changed, skipping recalculation');
+        // Reset game start time so timer starts fresh for new speaker
+        const newStartTime = new Date(Date.now() - (currentSpeakerIndex.value * room.value.discussion_time * 1000))
+        gameStartTime.value = newStartTime.toISOString()
+        
+        // Immediately update timers to show full countdown for new speaker
+        updateTimers()
+      }
+      
+      // Update game start time if exists (from initial load)
+      if (payload.new.game_start_time && !gameStartTime.value) {
+        gameStartTime.value = payload.new.game_start_time
       }
       
       console.groupEnd();
@@ -729,29 +738,35 @@ const subscribeToUpdates = () => {
     .subscribe()
 }
 
-// Helper function to recalculate current speaker index based on elapsed time
-const recalculateSpeakerIndex = () => {
+// Helper function to calculate time left for current speaker
+const updateTimers = () => {
   if (!gameStartTime.value || !room.value || room.value.status !== 'IN_PROGRESS') return
   
   const startTime = new Date(gameStartTime.value)
   const elapsed = Math.floor((Date.now() - startTime) / 1000)
   const timePerPlayer = room.value.discussion_time
-  const totalElapsed = elapsed - (extendCount.value * 30)
-  const calculatedSpeakerIndex = Math.floor(totalElapsed / timePerPlayer)
   
-  // Update speaker index if changed and within bounds
-  if (calculatedSpeakerIndex !== currentSpeakerIndex.value && calculatedSpeakerIndex < speakerOrder.value.length) {
-    currentSpeakerIndex.value = calculatedSpeakerIndex
-    console.log(`🔄 Speaker index synced to ${calculatedSpeakerIndex} (${currentSpeaker.value?.users?.full_name})`)
-  }
-  
-  // Update time left for current speaker
-  const elapsedForCurrentSpeaker = totalElapsed - (currentSpeakerIndex.value * timePerPlayer)
+  // Calculate time elapsed for current speaker only
+  const elapsedForCurrentSpeaker = elapsed - (currentSpeakerIndex.value * timePerPlayer) - (extendCount.value * 30)
   speakTimeLeft.value = Math.max(0, timePerPlayer - elapsedForCurrentSpeaker)
   
-  // Update overall time left
+  // Calculate overall time left
   const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
   timeLeft.value = Math.max(0, maxTime - elapsed)
+  
+  // Auto-advance to next speaker when time runs out (host only)
+  if (speakTimeLeft.value === 0 && isHost.value && currentSpeakerIndex.value < speakerOrder.value.length - 1) {
+    const nextIndex = currentSpeakerIndex.value + 1
+    console.log(`⏰ Time's up! Auto-advancing to speaker ${nextIndex}`)
+    
+    supabase
+      .from('rooms')
+      .update({ current_speaker_index: nextIndex })
+      .eq('id', room.value.id)
+      .then(({ error }) => {
+        if (error) console.error('Error auto-advancing speaker:', error)
+      })
+  }
 }
 
 const startTimer = () => {
@@ -759,8 +774,8 @@ const startTimer = () => {
     if (!room.value || !gameStartTime.value) return
     
     if (room.value.status === 'IN_PROGRESS') {
-      // Recalculate speaker index and timers
-      recalculateSpeakerIndex()
+      // Update timers (countdown only, speaker index from database)
+      updateTimers()
       
       // Check if all speakers finished
       if (currentSpeakerIndex.value >= speakerOrder.value.length) {
@@ -796,18 +811,16 @@ const nextSpeaker = async () => {
     console.log('Current speaker index:', currentSpeakerIndex.value);
     console.log('Current speaker:', currentSpeaker.value?.users?.full_name);
     
-    // Calculate new start time to simulate time skip
+    // Move to next speaker index (direct database update like voting)
     const targetIndex = currentSpeakerIndex.value + 1
-    const newStartTime = new Date(Date.now() - (targetIndex * room.value.discussion_time * 1000))
     
     console.log('Target index:', targetIndex);
-    console.log('New start time:', newStartTime.toISOString());
     console.log('Updating database...');
     
-    // Update in database so all clients sync
+    // Update speaker index in database so all clients sync instantly
     const { data, error } = await supabase
       .from('rooms')
-      .update({ game_start_time: newStartTime.toISOString() })
+      .update({ current_speaker_index: targetIndex })
       .eq('id', room.value.id)
       .select()
     
@@ -817,12 +830,7 @@ const nextSpeaker = async () => {
     }
     
     console.log('✅ Database updated successfully:', data);
-    
-    // Local update (will be overwritten by subscription)
-    currentSpeakerIndex.value = targetIndex
-    gameStartTime.value = newStartTime.toISOString()
-    
-    console.log('🎯 Local state updated');
+    console.log('🔄 All clients will sync via Realtime subscription');
     console.groupEnd();
   } catch (error) {
     console.error('Error skipping speaker:', error)
