@@ -11,21 +11,36 @@
       </p>
 
       <!-- Feature cards -->
-      <div class="grid md:grid-cols-3 gap-4 mt-12">
-        <div class="group bg-gradient-to-br from-purple-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-purple-500/20 hover:to-purple-600/20 transition-all border border-purple-500/20 hover:border-purple-500/40">
-          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">S</div>
-          <h3 class="font-bold text-lg mb-2">Strategic Gameplay</h3>
-          <p class="text-sm text-gray-400">Use your words wisely to find the impostor</p>
+      <div class="grid md:grid-cols-3 gap-6 mt-12">
+        <div class="group bg-gradient-to-br from-purple-600/20 to-purple-900/40 backdrop-blur-sm rounded-2xl p-6 hover:from-purple-500/30 hover:to-purple-800/50 transition-all duration-300 border-2 border-purple-500/30 hover:border-purple-400/60 hover:shadow-2xl hover:shadow-purple-500/30 hover:-translate-y-2">
+          <div class="relative mb-4">
+            <div class="absolute inset-0 bg-purple-500 rounded-xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-700 rounded-xl flex items-center justify-center text-white font-black text-3xl group-hover:rotate-12 transition-all duration-300 shadow-lg">
+              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+            </div>
+          </div>
+          <h3 class="font-bold text-xl mb-2 text-purple-300">Strategic Gameplay</h3>
+          <p class="text-sm text-gray-300">Use your words wisely to find the impostor</p>
         </div>
-        <div class="group bg-gradient-to-br from-pink-500/10 to-pink-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-pink-500/20 hover:to-pink-600/20 transition-all border border-pink-500/20 hover:border-pink-500/40">
-          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">V</div>
-          <h3 class="font-bold text-lg mb-2">Voice Chat</h3>
-          <p class="text-sm text-gray-400">Real-time voice communication</p>
+        <div class="group bg-gradient-to-br from-pink-600/20 to-rose-900/40 backdrop-blur-sm rounded-2xl p-6 hover:from-pink-500/30 hover:to-rose-800/50 transition-all duration-300 border-2 border-pink-500/30 hover:border-pink-400/60 hover:shadow-2xl hover:shadow-pink-500/30 hover:-translate-y-2">
+          <div class="relative mb-4">
+            <div class="absolute inset-0 bg-pink-500 rounded-xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-pink-400 to-rose-700 rounded-xl flex items-center justify-center text-white font-black text-3xl group-hover:scale-110 transition-all duration-300 shadow-lg">
+              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/></svg>
+            </div>
+          </div>
+          <h3 class="font-bold text-xl mb-2 text-pink-300">Voice Chat</h3>
+          <p class="text-sm text-gray-300">Real-time voice communication</p>
         </div>
-        <div class="group bg-gradient-to-br from-blue-500/10 to-blue-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-blue-500/20 hover:to-blue-600/20 transition-all border border-blue-500/20 hover:border-blue-500/40">
-          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">R</div>
-          <h3 class="font-bold text-lg mb-2">Real-time Updates</h3>
-          <p class="text-sm text-gray-400">Instant sync for all players</p>
+        <div class="group bg-gradient-to-br from-cyan-600/20 to-blue-900/40 backdrop-blur-sm rounded-2xl p-6 hover:from-cyan-500/30 hover:to-blue-800/50 transition-all duration-300 border-2 border-cyan-500/30 hover:border-cyan-400/60 hover:shadow-2xl hover:shadow-cyan-500/30 hover:-translate-y-2">
+          <div class="relative mb-4">
+            <div class="absolute inset-0 bg-cyan-500 rounded-xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-700 rounded-xl flex items-center justify-center text-white font-black text-3xl group-hover:rotate-180 transition-all duration-500 shadow-lg">
+              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+            </div>
+          </div>
+          <h3 class="font-bold text-xl mb-2 text-cyan-300">Real-time Sync</h3>
+          <p class="text-sm text-gray-300">Instant updates for all players</p>
         </div>
       </div>
 
@@ -58,21 +73,23 @@
           <div class="flex gap-4 justify-center">
             <router-link 
               to="/create-room"
-              class="group bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-500 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50"
+              class="group relative bg-gradient-to-r from-purple-600 via-purple-500 to-pink-600 px-10 py-5 rounded-2xl font-black text-xl hover:from-purple-500 hover:via-purple-400 hover:to-pink-500 transition-all transform hover:scale-110 shadow-2xl hover:shadow-purple-500/60 animate-pulse-slow overflow-hidden"
             >
-              <span class="flex items-center gap-2">
-                <span class="text-2xl group-hover:rotate-12 transition-transform">+</span>
-                Create Room
+              <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              <span class="relative flex items-center gap-3">
+                <span class="text-3xl group-hover:rotate-90 transition-all duration-300">+</span>
+                <span class="tracking-wide">CREATE ROOM</span>
               </span>
             </router-link>
             
             <router-link 
               to="/join-room"
-              class="group bg-gradient-to-r from-pink-600 to-pink-700 px-8 py-4 rounded-xl font-bold text-lg hover:from-pink-500 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg hover:shadow-pink-500/50"
+              class="group relative bg-gradient-to-r from-pink-600 via-rose-500 to-orange-600 px-10 py-5 rounded-2xl font-black text-xl hover:from-pink-500 hover:via-rose-400 hover:to-orange-500 transition-all transform hover:scale-110 shadow-2xl hover:shadow-pink-500/60 overflow-hidden"
             >
-              <span class="flex items-center gap-2">
-                <span class="text-2xl group-hover:translate-x-1 transition-transform">→</span>
-                Join Room
+              <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              <span class="relative flex items-center gap-3">
+                <span class="tracking-wide">JOIN ROOM</span>
+                <span class="text-3xl group-hover:translate-x-2 transition-all duration-300">»</span>
               </span>
             </router-link>
           </div>

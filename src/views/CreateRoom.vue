@@ -1,60 +1,71 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-2xl w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
-      <h1 class="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">Create New Room</h1>
-      <p class="text-center text-gray-400 mb-8">Configure your game settings</p>
+    <div class="max-w-2xl w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-lg rounded-3xl p-8 border-4 border-purple-500/40 shadow-2xl shadow-purple-500/30">
+      <div class="text-center mb-8 animate-bounce-slow">
+        <h1 class="text-6xl font-black mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent drop-shadow-2xl">CREATE ROOM</h1>
+        <div class="relative inline-block">
+          <div class="absolute -inset-4 bg-gradient-to-r from-purple-600/50 to-pink-600/50 rounded-full blur-2xl animate-pulse"></div>
+          <p class="relative text-gray-300 text-xl font-bold tracking-wide px-6 py-2 bg-gray-900/60 rounded-full border-2 border-purple-500/50">
+            Set up your game
+          </p>
+        </div>
+      </div>
       
       <form @submit.prevent="createRoom" class="space-y-6">
-        <div>
-          <label class="block text-sm font-semibold mb-2 text-gray-300">Room Name</label>
+        <div class="group">
+          <label class="block text-lg font-black mb-3 text-purple-300 flex items-center gap-2">
+            <span class="text-2xl">🏠</span> ROOM NAME
+          </label>
           <input 
             v-model="roomName"
             type="text"
             required
             maxlength="50"
-            class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-            placeholder="Enter room name..."
+            class="w-full px-6 py-4 rounded-2xl bg-gray-900/80 border-4 border-purple-500/40 focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-500/50 transition-all text-xl font-bold placeholder-gray-600 hover:border-purple-500/60"
+            placeholder="Your Epic Room..."
           />
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
-          <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-            <label class="block text-sm font-semibold mb-3 text-gray-300">
-              Max Players
+          <div class="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-6 border-4 border-purple-500/40 hover:border-purple-400/60 transition-all hover:shadow-xl hover:shadow-purple-500/30">
+            <label class="block text-lg font-black mb-4 text-purple-300 flex items-center gap-2">
+              <span class="text-2xl">👥</span> MAX PLAYERS
             </label>
-            <div class="text-center mb-3">
-              <span class="text-4xl font-bold text-purple-400">{{ maxPlayers }}</span>
-              <span class="text-gray-400 text-sm ml-2">players</span>
+            <div class="text-center mb-4 relative">
+              <div class="absolute inset-0 bg-purple-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ maxPlayers }}</span>
+              <span class="relative text-gray-400 text-sm ml-2 font-bold">players</span>
             </div>
             <input 
               v-model.number="maxPlayers"
               type="range"
               min="3"
               max="10"
-              class="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer slider-purple"
+              class="w-full h-4 bg-purple-900/50 rounded-full appearance-none cursor-pointer slider-purple hover:h-5 transition-all"
             />
-            <div class="flex justify-between text-xs text-gray-500 mt-2">
+            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
               <span>3</span>
               <span>10</span>
             </div>
           </div>
 
-          <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-            <label class="block text-sm font-semibold mb-3 text-gray-300">
-              Impostors
+          <div class="group bg-gradient-to-br from-pink-900/30 to-pink-800/20 rounded-2xl p-6 border-4 border-pink-500/40 hover:border-pink-400/60 transition-all hover:shadow-xl hover:shadow-pink-500/30">
+            <label class="block text-lg font-black mb-4 text-pink-300 flex items-center gap-2">
+              <span class="text-2xl">🎭</span> IMPOSTORS
             </label>
-            <div class="text-center mb-3">
-              <span class="text-4xl font-bold text-pink-400">{{ impostorCount }}</span>
-              <span class="text-gray-400 text-sm ml-2">impostor{{ impostorCount > 1 ? 's' : '' }}</span>
+            <div class="text-center mb-4 relative">
+              <div class="absolute inset-0 bg-pink-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ impostorCount }}</span>
+              <span class="relative text-gray-400 text-sm ml-2 font-bold">impostor{{ impostorCount > 1 ? 's' : '' }}</span>
             </div>
             <input 
               v-model.number="impostorCount"
               type="range"
               min="1"
               :max="Math.max(1, Math.floor(maxPlayers / 2))"
-              class="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer slider-pink"
+              class="w-full h-4 bg-pink-900/50 rounded-full appearance-none cursor-pointer slider-pink hover:h-5 transition-all"
             />
-            <div class="flex justify-between text-xs text-gray-500 mt-2">
+            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
               <span>1</span>
               <span>{{ Math.floor(maxPlayers / 2) }}</span>
             </div>
@@ -62,12 +73,13 @@
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
-          <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-            <label class="block text-sm font-semibold mb-3 text-gray-300">
-              Discussion Time
+          <div class="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-6 border-4 border-blue-500/40 hover:border-blue-400/60 transition-all hover:shadow-xl hover:shadow-blue-500/30">
+            <label class="block text-lg font-black mb-4 text-blue-300 flex items-center gap-2">
+              <span class="text-2xl">💬</span> DISCUSSION
             </label>
-            <div class="text-center mb-3">
-              <span class="text-4xl font-bold text-blue-400">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
+            <div class="text-center mb-4 relative">
+              <div class="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
             </div>
             <input 
               v-model.number="discussionTime"
@@ -75,20 +87,22 @@
               min="30"
               max="300"
               step="30"
-              class="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer slider-blue"
+              class="w-full h-4 bg-blue-900/50 rounded-full appearance-none cursor-pointer slider-blue hover:h-5 transition-all"
             />
-            <div class="flex justify-between text-xs text-gray-500 mt-2">
+            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
               <span>30s</span>
               <span>5min</span>
             </div>
           </div>
 
-          <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-            <label class="block text-sm font-semibold mb-3 text-gray-300">
-              Voting Time
+          <div class="group bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-2xl p-6 border-4 border-green-500/40 hover:border-green-400/60 transition-all hover:shadow-xl hover:shadow-green-500/30">
+            <label class="block text-lg font-black mb-4 text-green-300 flex items-center gap-2">
+              <span class="text-2xl">🗳️</span> VOTING
             </label>
-            <div class="text-center mb-3">
-              <span class="text-4xl font-bold text-green-400">{{ votingTime }}s</span>
+            <div class="text-center mb-4 relative">
+              <div class="absolute inset-0 bg-green-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ votingTime }}</span>
+              <span class="relative text-gray-400 text-sm ml-1 font-bold">s</span>
             </div>
             <input 
               v-model.number="votingTime"
@@ -96,38 +110,44 @@
               min="20"
               max="120"
               step="10"
-              class="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer slider-green"
+              class="w-full h-4 bg-green-900/50 rounded-full appearance-none cursor-pointer slider-green hover:h-5 transition-all"
             />
-            <div class="flex justify-between text-xs text-gray-500 mt-2">
+            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
               <span>20s</span>
               <span>2min</span>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center bg-white/5 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-colors">
+        <div class="group flex items-center bg-gradient-to-r from-cyan-900/30 to-cyan-800/20 rounded-2xl p-6 border-4 border-cyan-500/40 hover:border-cyan-400/60 transition-all cursor-pointer hover:shadow-xl hover:shadow-cyan-500/30">
           <input 
             v-model="voiceChatEnabled"
             type="checkbox"
             id="voice"
-            class="w-5 h-5 rounded accent-purple-600 cursor-pointer"
+            class="w-7 h-7 rounded-lg accent-cyan-600 cursor-pointer"
           />
-          <label for="voice" class="ml-3 cursor-pointer flex-1 font-medium">Enable Voice Chat</label>
-          <span v-if="voiceChatEnabled" class="text-green-400 text-sm font-semibold">ON</span>
-          <span v-else class="text-gray-500 text-sm">OFF</span>
+          <label for="voice" class="ml-4 cursor-pointer flex-1 font-black text-xl text-cyan-300 flex items-center gap-2">
+            <span class="text-2xl">🎤</span> VOICE CHAT
+          </label>
+          <span v-if="voiceChatEnabled" class="text-green-400 text-lg font-black px-4 py-1 bg-green-900/50 rounded-full border-2 border-green-500/50">ON</span>
+          <span v-else class="text-gray-500 text-lg font-bold px-4 py-1 bg-gray-900/50 rounded-full border-2 border-gray-700/50">OFF</span>
         </div>
 
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-4 rounded-xl font-bold text-lg hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] active:scale-[0.98]"
+          class="group relative w-full bg-gradient-to-r from-purple-600 via-purple-500 to-pink-600 py-6 rounded-2xl font-black text-3xl hover:from-purple-500 hover:via-purple-400 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/60 transform hover:scale-105 active:scale-95 overflow-hidden"
         >
-          {{ loading ? 'Creating Room...' : 'Create Room' }}
+          <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          <span class="relative flex items-center justify-center gap-3">
+            <span class="text-4xl group-hover:rotate-90 transition-all duration-300">{{ loading ? '⏳' : '🚀' }}</span>
+            <span class="tracking-wider">{{ loading ? 'CREATING...' : 'CREATE ROOM' }}</span>
+          </span>
         </button>
 
         <router-link 
           to="/"
-          class="block text-center text-gray-400 hover:text-gray-300 transition-colors"
+          class="block text-center text-gray-400 hover:text-gray-200 transition-colors font-bold text-lg hover:scale-110 transform inline-block"
         >
           ← Back to Home
         </router-link>
