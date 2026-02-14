@@ -193,15 +193,7 @@ const loadRoomData = async () => {
     // Load participants with user data
     const { data: participantsData, error: participantsError } = await supabase
       .from('room_participants')
-      .select(`
-        *,
-        users (
-          id,
-          email,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('*, users:user_id(id, email, full_name, avatar_url)')
       .eq('room_id', roomData.id)
     
     if (participantsError) {

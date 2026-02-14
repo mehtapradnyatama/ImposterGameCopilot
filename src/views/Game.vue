@@ -505,7 +505,7 @@ const loadGameData = async () => {
     // Load participants
     const { data: participantsData, error: participantsError } = await supabase
       .from('room_participants')
-      .select('*, users(*)')
+      .select('*, users:user_id(*)')
       .eq('room_id', roomData.id)
     
     if (participantsError) throw participantsError
@@ -521,7 +521,7 @@ const loadGameData = async () => {
     // Load chat
     const { data: chatData } = await supabase
       .from('chat_messages')
-      .select('*, users(*)')
+      .select('*, users:user_id(*)')
       .eq('room_id', roomData.id)
       .order('created_at', { ascending: true })
     
