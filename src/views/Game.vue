@@ -553,7 +553,7 @@ const loadGameData = async () => {
     
     console.log('✅ Room loaded:', roomData);
     room.value = roomData
-    gameStartTime.value = roomData.updated_at
+    gameStartTime.value = roomData.created_at
     
     console.log('2. Loading participants for room:', roomData.id);
     
@@ -624,7 +624,7 @@ const subscribeToUpdates = () => {
     }, async (payload) => {
       room.value = payload.new
       if (payload.new.status === 'VOTING') {
-        votingStartTime.value = payload.new.updated_at
+        votingStartTime.value = new Date().toISOString()
         hasVoted.value = false
         myVote.value = null
       } else if (payload.new.status === 'FINISHED') {
@@ -776,7 +776,7 @@ const startVoting = async () => {
     console.log('9. Attempting UPDATE rooms...');
     const { data, error } = await supabase
       .from('rooms')
-      .update({ status: 'VOTING', updated_at: votingStartTime.value })
+      .update({ status: 'VOTING' })
       .eq('id', room.value.id)
       .select();
     
