@@ -57,42 +57,64 @@
       <div class="grid lg:grid-cols-3 gap-4">
         <!-- Main Game Area -->
         <div class="lg:col-span-2 space-y-4">
-          <!-- Your Word Display - Huge Arcade Score Style -->
-          <div class="relative bg-black border-8 p-8 text-center" :class="isImposter ? 'border-red-500' : 'border-cyan-400'" :style="isImposter ? 'box-shadow: 8px 8px 0 rgba(239, 68, 68, 0.5);' : 'box-shadow: 8px 8px 0 rgba(34, 211, 238, 0.5);'">
+          <!-- Current Speaker & Your Word Display -->
+          <div class="relative bg-black border-8 p-8 text-center border-yellow-400" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
             <div>
-              <div class="mb-4">
-                <p class="text-xs font-black mb-3 score-display uppercase" :class="isImposter ? 'text-red-400' : 'text-cyan-400'">■ YOUR ROLE ■</p>
-                <div class="inline-block px-6 py-2 border-4 mb-4" :class="isImposter ? 'bg-red-600 border-red-800' : 'bg-cyan-600 border-cyan-800'" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                  <p class="text-xl font-black score-display" :class="isImposter ? 'text-white' : 'text-white'">
-                    {{ isImposter ? 'IMPOSTOR' : 'NORMAL PLAYER' }}
+              <!-- Current Speaker Display -->
+              <div v-if="room?.status === 'IN_PROGRESS' && currentSpeaker" class="mb-6">
+                <p class="text-xs font-black mb-3 score-display uppercase text-yellow-400">■ NOW SPEAKING ■</p>
+                <div class="flex items-center justify-center gap-4 bg-yellow-600 border-4 border-yellow-800 p-5 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                  <img :src="currentSpeaker.users.avatar_url" class="w-16 h-16 border-4 border-yellow-900" style="image-rendering: pixelated;" />
+                  <p class="text-3xl font-black score-display text-white">
+                    {{ currentSpeaker.users.full_name.toUpperCase() }}
                   </p>
                 </div>
+                
+                <!-- Timer for current speaker -->
+                <div class="bg-gray-900 border-4 border-yellow-600 p-4">
+                  <p class="text-yellow-400 text-xs mb-2 score-display">TIME LEFT FOR THIS PLAYER</p>
+                  <p class="text-4xl font-black score-display text-yellow-400">{{ speakTimeLeft }}S</p>
+                </div>
+                
+                <!-- Next button (only for current speaker) -->
+                <div v-if="isMyTurn" class="mt-4">
+                  <button 
+                    @click="nextSpeaker"
+                    class="bg-green-600 border-4 border-green-800 px-8 py-4 hover:bg-green-500 transition-all text-lg font-black score-display text-white"
+                    style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+                  >
+                    ▶ I'M DONE - NEXT SPEAKER
+                  </button>
+                </div>
+                
+                <div v-else class="mt-4 bg-gray-800 border-4 border-gray-900 p-3">
+                  <p class="text-gray-400 text-xs score-display">WAIT FOR {{ currentSpeaker.users.full_name.toUpperCase() }} TO FINISH</p>
+                </div>
               </div>
-              <div class="bg-gray-900 border-4 p-8 mt-4" :class="isImposter ? 'border-red-600' : 'border-cyan-600'" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
+              
+              <!-- Your Word -->
+              <div class="bg-gray-900 border-4 p-8" :class="isImposter ? 'border-red-600' : 'border-cyan-600'" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
                 <p class="text-gray-400 text-xs mb-3 score-display uppercase">▼ YOUR WORD ▼</p>
                 <p class="text-6xl md:text-7xl font-black score-display" :class="isImposter ? 'text-red-400' : 'text-cyan-400'">{{ myWord }}</p>
               </div>
-              <div class="mt-6 px-4 py-3 border-4" :class="isImposter ? 'bg-red-900 border-red-700' : 'bg-cyan-900 border-cyan-700'">
+              
+              <div class="mt-6 px-4 py-3 border-4 bg-yellow-900 border-yellow-700">
                 <p class="text-white text-xs leading-relaxed score-display">
-                  {{ isImposter 
-                    ? 'YOU HAVE A DIFFERENT WORD! BLEND IN WITHOUT GETTING CAUGHT.' 
-                    : 'FIND PLAYERS WITH DIFFERENT WORDS THROUGH DISCUSSION!' 
-                  }}
+                  SPEAK ABOUT YOUR WORD WHEN IT'S YOUR TURN. FIND WHO HAS DIFFERENT WORDS!
                 </p>
               </div>
             </div>
           </div>
-
-          <!-- STAGE 2: Discussion Phase -->
+          <!-- STAGE 2: Speak Round Phase -->
           <div v-if="room?.status === 'IN_PROGRESS'" class="bg-gray-900 border-4 border-blue-500 p-6" style="box-shadow: 6px 6px 0 rgba(59, 130, 246, 0.5);">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-10 h-10 bg-blue-600 border-4 border-blue-800 flex items-center justify-center font-black text-xl score-display">2</div>
-              <h2 class="text-2xl font-black text-blue-400 score-display">STAGE 2: DISCUSSION</h2>
+              <h2 class="text-2xl font-black text-blue-400 score-display">STAGE 2: SPEAK ROUND</h2>
             </div>
             <div class="bg-blue-900 border-4 border-blue-700 p-4 mb-4">
               <p class="text-white text-xs leading-relaxed score-display uppercase">
-                TALK WITH OTHER PLAYERS USING CHAT OR VOICE. 
-                {{ isHost ? 'AS HOST, YOU CAN START VOTING ANYTIME!' : 'WAIT FOR HOST TO START VOTING.' }}
+                EACH PLAYER TAKES TURNS TO SPEAK ABOUT THEIR WORD!
+                {{ isHost ? 'AS HOST, YOU CAN START VOTING ANYTIME!' : '' }}
               </p>
             </div>
             
@@ -368,10 +390,18 @@ const voteCount = ref(0)
 const gameStartTime = ref(null)
 const votingStartTime = ref(null)
 
+// Turn-based speaking system
+const speakerOrder = ref([]) // Randomized order of participants
+const currentSpeakerIndex = ref(0)
+const speakTimeLeft = ref(0)
+
 // Voice chat
 const isVoiceConnected = ref(false)
 const isTalking = ref(false)
 const isAlwaysOn = ref(false)
+const localStream = ref(null)
+const peerConnections = ref({}) // userId -> RTCPeerConnection
+const voiceChannel = ref(null)
 
 let roomSubscription = null
 let participantSubscription = null
@@ -393,10 +423,19 @@ const normalWord = computed(() => {
   return normal?.word || ''
 })
 
+const currentSpeaker = computed(() => {
+  if (!speakerOrder.value.length || currentSpeakerIndex.value >= speakerOrder.value.length) return null
+  return speakerOrder.value[currentSpeakerIndex.value]
+})
+
+const isMyTurn = computed(() => {
+  return currentSpeaker.value?.user_id === currentUser.value?.id
+})
+
 const phaseText = computed(() => {
   if (!room.value) return 'Loading...'
   const phases = {
-    'IN_PROGRESS': 'Discussion',
+    'IN_PROGRESS': 'Speak Round',
     'VOTING': 'Voting',
     'FINISHED': 'Game Over'
   }
@@ -487,6 +526,11 @@ onUnmounted(() => {
   if (chatSubscription) chatSubscription.unsubscribe()
   if (voteSubscription) voteSubscription.unsubscribe()
   if (timerInterval) clearInterval(timerInterval)
+  
+  // Cleanup voice chat
+  if (isVoiceConnected.value) {
+    disconnectVoiceChat()
+  }
 })
 
 const loadGameData = async () => {
@@ -510,6 +554,12 @@ const loadGameData = async () => {
     
     if (participantsError) throw participantsError
     participants.value = participantsData || []
+    
+    // Initialize speaker order (random shuffle) if not already set
+    if (speakerOrder.value.length === 0 && participants.value.length > 0) {
+      speakerOrder.value = [...participants.value].sort(() => Math.random() - 0.5)
+      currentSpeakerIndex.value = 0
+    }
     
     // Get my data
     const me = participants.value.find(p => p.user_id === currentUser.value.id)
@@ -618,16 +668,40 @@ const startTimer = () => {
     if (!room.value || !gameStartTime.value) return
     
     if (room.value.status === 'IN_PROGRESS') {
+      // Turn-based timer: track time for current speaker
       const startTime = new Date(gameStartTime.value)
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      const maxTime = room.value.discussion_time + (extendCount.value * 30)
+      
+      // Calculate which speaker's turn it is based on elapsed time
+      const timePerPlayer = room.value.discussion_time
+      const totalElapsed = elapsed - (extendCount.value * 30)
+      const calculatedSpeakerIndex = Math.floor(totalElapsed / timePerPlayer)
+      
+      // Update speaker index if changed
+      if (calculatedSpeakerIndex !== currentSpeakerIndex.value && calculatedSpeakerIndex < speakerOrder.value.length) {
+        currentSpeakerIndex.value = calculatedSpeakerIndex
+      }
+      
+      // Time left for current speaker
+      const elapsedForCurrentSpeaker = totalElapsed - (currentSpeakerIndex.value * timePerPlayer)
+      speakTimeLeft.value = Math.max(0, timePerPlayer - elapsedForCurrentSpeaker)
+      
+      // Check if all speakers finished
+      if (currentSpeakerIndex.value >= speakerOrder.value.length) {
+        if (isHost.value) {
+          startVoting()
+        }
+      }
+      
+      // Overall time left
+      const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
       timeLeft.value = Math.max(0, maxTime - elapsed)
     } else if (room.value.status === 'VOTING' && votingStartTime.value) {
       const startTime = new Date(votingStartTime.value)
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       timeLeft.value = Math.max(0, room.value.voting_time - elapsed)
       
-      if (timeLeft.value === 0) {
+      if (timeLeft.value === 0 && isHost.value) {
         finishGame()
       }
     }
@@ -640,6 +714,23 @@ const extendTime = async () => {
   extendCount.value++
   // Extend time is handled by client-side calculation
   alert('Time extended by 30 seconds!')
+}
+
+const nextSpeaker = async () => {
+  if (!isMyTurn.value) return
+  
+  // Move to next speaker
+  if (currentSpeakerIndex.value < speakerOrder.value.length - 1) {
+    currentSpeakerIndex.value++
+    // Update game start time to simulate time skip
+    const newStartTime = new Date(Date.now() - (currentSpeakerIndex.value * room.value.discussion_time * 1000))
+    gameStartTime.value = newStartTime.toISOString()
+  } else {
+    // All speakers done, start voting if host
+    if (isHost.value) {
+      await startVoting()
+    }
+  }
 }
 
 const startVoting = async () => {
@@ -659,20 +750,35 @@ const startVoting = async () => {
 }
 
 const submitVote = async (votedUserId) => {
-  if (hasVoted.value || votedUserId === currentUser.value.id) return
+  if (hasVoted.value || votedUserId === currentUser.value.id) {
+    console.log('Cannot vote:', { hasVoted: hasVoted.value, votingSelf: votedUserId === currentUser.value.id })
+    return
+  }
   
   try {
-    await supabase.from('votes').insert({
+    console.log('Submitting vote:', {
       room_id: room.value.id,
       voter_id: currentUser.value.id,
       voted_for_id: votedUserId
     })
     
+    const { data, error } = await supabase.from('votes').insert({
+      room_id: room.value.id,
+      voter_id: currentUser.value.id,
+      voted_for_id: votedUserId
+    })
+    
+    if (error) {
+      console.error('Vote insert error:', error)
+      throw error
+    }
+    
+    console.log('Vote submitted successfully:', data)
     myVote.value = votedUserId
     hasVoted.value = true
   } catch (error) {
     console.error('Error submitting vote:', error)
-    alert('Error submitting vote: ' + error.message)
+    alert('Error submitting vote: ' + (error.message || error.hint || 'Unknown error. Check console.'))
   }
 }
 
@@ -804,11 +910,221 @@ const sendMessage = async () => {
   }
 }
 
-const toggleVoiceChat = () => {
-  isVoiceConnected.value = !isVoiceConnected.value
-  // TODO: WebRTC implementation
+const toggleVoiceChat = async () => {
   if (isVoiceConnected.value) {
-    alert('Voice chat connected! (WebRTC implementation pending)')
+    // Disconnect voice chat
+    disconnectVoiceChat()
+  } else {
+    // Connect voice chat
+    try {
+      // Get microphone access
+      localStream.value = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      })
+      
+      // Mute initially if not always-on
+      if (!isAlwaysOn.value) {
+        localStream.value.getAudioTracks().forEach(track => track.enabled = false)
+      }
+      
+      // Create voice channel for signaling
+      voiceChannel.value = supabase.channel(`voice:${room.value.id}`)
+        .on('broadcast', { event: 'offer' }, async ({ payload }) => {
+          if (payload.to === currentUser.value.id) {
+            await handleOffer(payload)
+          }
+        })
+        .on('broadcast', { event: 'answer' }, async ({ payload }) => {
+          if (payload.to === currentUser.value.id) {
+            await handleAnswer(payload)
+          }
+        })
+        .on('broadcast', { event: 'ice-candidate' }, async ({ payload }) => {
+          if (payload.to === currentUser.value.id) {
+            await handleIceCandidate(payload)
+          }
+        })
+        .on('broadcast', { event: 'user-joined' }, async ({ payload }) => {
+          if (payload.userId !== currentUser.value.id) {
+            await createPeerConnection(payload.userId, true)
+          }
+        })
+        .on('broadcast', { event: 'user-left' }, ({ payload }) => {
+          if (peerConnections.value[payload.userId]) {
+            peerConnections.value[payload.userId].close()
+            delete peerConnections.value[payload.userId]
+          }
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            isVoiceConnected.value = true
+            
+            // Notify others that we joined
+            await voiceChannel.value.send({
+              type: 'broadcast',
+              event: 'user-joined',
+              payload: { userId: currentUser.value.id }
+            })
+            
+            // Create peer connections for existing participants
+            for (const participant of participants.value) {
+              if (participant.user_id !== currentUser.value.id) {
+                // Small delay to avoid race conditions
+                await new Promise(resolve => setTimeout(resolve, 100))
+                await createPeerConnection(participant.user_id, true)
+              }
+            }
+          }
+        })
+    } catch (error) {
+      console.error('Error accessing microphone:', error)
+      alert('Could not access microphone. Please check permissions.')
+      isVoiceConnected.value = false
+    }
+  }
+}
+
+const disconnectVoiceChat = () => {
+  // Stop all tracks
+  if (localStream.value) {
+    localStream.value.getTracks().forEach(track => track.stop())
+    localStream.value = null
+  }
+  
+  // Close all peer connections
+  Object.values(peerConnections.value).forEach(pc => pc.close())
+  peerConnections.value = {}
+  
+  // Notify others and unsubscribe from channel
+  if (voiceChannel.value) {
+    voiceChannel.value.send({
+      type: 'broadcast',
+      event: 'user-left',
+      payload: { userId: currentUser.value.id }
+    })
+    voiceChannel.value.unsubscribe()
+    voiceChannel.value = null
+  }
+  
+  isVoiceConnected.value = false
+  isTalking.value = false
+}
+
+const createPeerConnection = async (remoteUserId, isInitiator) => {
+  if (peerConnections.value[remoteUserId]) return
+  
+  const configuration = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  }
+  
+  const pc = new RTCPeerConnection(configuration)
+  peerConnections.value[remoteUserId] = pc
+  
+  // Add local stream tracks
+  if (localStream.value) {
+    localStream.value.getTracks().forEach(track => {
+      pc.addTrack(track, localStream.value)
+    })
+  }
+  
+  // Handle incoming audio
+  pc.ontrack = (event) => {
+    const remoteAudio = new Audio()
+    remoteAudio.srcObject = event.streams[0]
+    remoteAudio.play().catch(e => console.error('Error playing remote audio:', e))
+  }
+  
+  // Handle ICE candidates
+  pc.onicecandidate = (event) => {
+    if (event.candidate && voiceChannel.value) {
+      voiceChannel.value.send({
+        type: 'broadcast',
+        event: 'ice-candidate',
+        payload: {
+          to: remoteUserId,
+          from: currentUser.value.id,
+          candidate: event.candidate
+        }
+      })
+    }
+  }
+  
+  // Create offer if we're the initiator
+  if (isInitiator) {
+    try {
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+      
+      await voiceChannel.value.send({
+        type: 'broadcast',
+        event: 'offer',
+        payload: {
+          to: remoteUserId,
+          from: currentUser.value.id,
+          offer: pc.localDescription
+        }
+      })
+    } catch (error) {
+      console.error('Error creating offer:', error)
+    }
+  }
+}
+
+const handleOffer = async ({ from, offer }) => {
+  try {
+    // Create peer connection if not exists
+    if (!peerConnections.value[from]) {
+      await createPeerConnection(from, false)
+    }
+    
+    const pc = peerConnections.value[from]
+    await pc.setRemoteDescription(new RTCSessionDescription(offer))
+    
+    // Create answer
+    const answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+    
+    // Send answer back
+    await voiceChannel.value.send({
+      type: 'broadcast',
+      event: 'answer',
+      payload: {
+        to: from,
+        from: currentUser.value.id,
+        answer: pc.localDescription
+      }
+    })
+  } catch (error) {
+    console.error('Error handling offer:', error)
+  }
+}
+
+const handleAnswer = async ({ from, answer }) => {
+  try {
+    const pc = peerConnections.value[from]
+    if (pc) {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer))
+    }
+  } catch (error) {
+    console.error('Error handling answer:', error)
+  }
+}
+
+const handleIceCandidate = async ({ from, candidate }) => {
+  try {
+    const pc = peerConnections.value[from]
+    if (pc && candidate) {
+      await pc.addIceCandidate(new RTCIceCandidate(candidate))
+    }
+  } catch (error) {
+    console.error('Error handling ICE candidate:', error)
   }
 }
 
@@ -816,24 +1132,32 @@ const toggleVoiceMode = () => {
   isAlwaysOn.value = !isAlwaysOn.value
   if (isAlwaysOn.value) {
     isTalking.value = true
-    // TODO: Start transmitting audio continuously
+    // Enable microphone
+    if (localStream.value) {
+      localStream.value.getAudioTracks().forEach(track => track.enabled = true)
+    }
   } else {
     isTalking.value = false
-    // TODO: Stop transmitting audio
+    // Disable microphone
+    if (localStream.value) {
+      localStream.value.getAudioTracks().forEach(track => track.enabled = false)
+    }
   }
 }
 
 const startTalking = () => {
-  if (!isAlwaysOn.value) {
+  if (!isAlwaysOn.value && localStream.value) {
     isTalking.value = true
-    // TODO: Start transmitting audio
+    // Enable microphone
+    localStream.value.getAudioTracks().forEach(track => track.enabled = true)
   }
 }
 
 const stopTalking = () => {
-  if (!isAlwaysOn.value) {
+  if (!isAlwaysOn.value && localStream.value) {
     isTalking.value = false
-    // TODO: Stop transmitting audio
+    // Disable microphone
+    localStream.value.getAudioTracks().forEach(track => track.enabled = false)
   }
 }
 

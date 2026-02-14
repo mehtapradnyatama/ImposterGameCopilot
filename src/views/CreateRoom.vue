@@ -80,7 +80,7 @@
           <!-- Discussion Time - Yellow -->
           <div class="bg-yellow-500 border-4 border-yellow-700 p-6" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
             <label class="block text-xs mb-4 text-black score-display text-center">
-              ▲ DISCUSSION
+              ▲ TIME PER PLAYER
             </label>
             <div class="text-center mb-4">
               <span class="text-5xl font-black text-black score-display">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
