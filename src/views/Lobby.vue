@@ -1,57 +1,62 @@
 <template>
   <div class="min-h-screen p-4">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto space-y-6">
       <!-- Room Header -->
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-        <div class="flex justify-between items-start mb-4">
+      <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+        <div class="flex justify-between items-start mb-6">
           <div>
-            <h1 class="text-3xl font-bold">{{ room?.name }}</h1>
-            <p class="text-gray-400">Room Code: <span class="text-2xl font-bold text-purple-400">{{ code }}</span></p>
+            <h1 class="text-3xl font-bold mb-1">{{ room?.name }}</h1>
+            <div class="flex items-center gap-2">
+              <span class="text-gray-400 text-sm">Room Code:</span>
+              <span class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent tracking-wider">{{ code }}</span>
+            </div>
           </div>
           <button 
             @click="copyRoomCode"
-            class="bg-purple-600 px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+            class="bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all font-semibold shadow-lg hover:shadow-purple-500/50 transform hover:scale-105"
           >
-            📋 Copy Code
+            Copy Code
           </button>
         </div>
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span class="text-gray-400">Players:</span>
-            <span class="font-bold ml-2">{{ participants.length }}/{{ room?.max_players }}</span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+            <span class="text-gray-400 text-xs block mb-1">Players</span>
+            <span class="font-bold text-xl text-purple-400">{{ participants.length }}<span class="text-gray-500 text-sm">/{{ room?.max_players }}</span></span>
           </div>
-          <div>
-            <span class="text-gray-400">Impostors:</span>
-            <span class="font-bold ml-2">{{ room?.impostor_count || 2 }}</span>
+          <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+            <span class="text-gray-400 text-xs block mb-1">Impostors</span>
+            <span class="font-bold text-xl text-pink-400">{{ room?.impostor_count || 2 }}</span>
           </div>
-          <div>
-            <span class="text-gray-400">Discussion:</span>
-            <span class="font-bold ml-2">{{ room?.discussion_time }}s</span>
+          <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+            <span class="text-gray-400 text-xs block mb-1">Discussion</span>
+            <span class="font-bold text-xl text-blue-400">{{ Math.floor((room?.discussion_time || 0) / 60) }}:{{ String((room?.discussion_time || 0) % 60).padStart(2, '0') }}</span>
           </div>
-          <div>
-            <span class="text-gray-400">Voting:</span>
-            <span class="font-bold ml-2">{{ room?.voting_time }}s</span>
+          <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+            <span class="text-gray-400 text-xs block mb-1">Voting</span>
+            <span class="font-bold text-xl text-green-400">{{ room?.voting_time }}s</span>
           </div>
         </div>
       </div>
 
       <!-- Players List -->
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-        <h2 class="text-2xl font-bold mb-4">Players in Lobby</h2>
-        <div class="grid md:grid-cols-2 gap-4">
+      <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+        <h2 class="text-2xl font-bold mb-4">Players <span class="text-gray-400 text-lg">({{ participants.length }})</span></h2>
+        <div class="grid md:grid-cols-2 gap-3">
           <div 
             v-for="participant in participants" 
             :key="participant.id"
-            class="flex items-center gap-4 bg-white/5 rounded-lg p-4"
+            class="group flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all"
           >
             <img 
               :src="participant.users.avatar_url" 
-              class="w-12 h-12 rounded-full border-2 border-purple-500"
+              class="w-14 h-14 rounded-full border-2 group-hover:border-purple-400 transition-colors shadow-lg"
+              :class="participant.is_host ? 'border-yellow-400' : 'border-purple-500/50'"
             />
             <div class="flex-1">
-              <p class="font-bold">{{ participant.users.full_name }}</p>
-              <p v-if="participant.is_host" class="text-xs text-yellow-400">👑 Host</p>
+              <p class="font-bold text-lg">{{ participant.users.full_name }}</p>
+              <p v-if="participant.is_host" class="text-xs font-semibold text-yellow-400 uppercase tracking-wide">Host</p>
+              <p v-else class="text-xs text-gray-500">Player</p>
             </div>
           </div>
         </div>
@@ -63,26 +68,28 @@
           v-if="isHost"
           @click="startGame"
           :disabled="participants.length < 3 || loading"
-          class="bg-green-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition disabled:opacity-50"
+          class="bg-gradient-to-r from-green-600 to-emerald-600 px-10 py-4 rounded-xl font-bold text-lg hover:from-green-500 hover:to-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/50 transform hover:scale-105"
         >
-          {{ loading ? 'Starting...' : 'Start Game' }}
+          {{ loading ? 'Starting Game...' : 'Start Game' }}
         </button>
         
         <button 
           @click="leaveRoom"
-          class="bg-red-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-red-700 transition"
+          class="bg-gradient-to-r from-red-600 to-rose-600 px-10 py-4 rounded-xl font-bold text-lg hover:from-red-500 hover:to-rose-500 transition-all shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
         >
           Leave Room
         </button>
       </div>
 
-      <p v-if="!isHost && participants.length >= 3" class="text-center text-gray-400 mt-4">
-        Waiting for host to start the game...
-      </p>
-      
-      <p v-if="participants.length < 3" class="text-center text-yellow-400 mt-4">
-        Need at least 3 players to start ({{ 3 - participants.length }} more needed)
-      </p>
+      <div class="text-center">
+        <p v-if="!isHost && participants.length >= 3" class="text-gray-400">
+          Waiting for host to start the game...
+        </p>
+        
+        <p v-if="participants.length < 3" class="text-yellow-400 font-semibold">
+          Need {{ 3 - participants.length }} more player{{ 3 - participants.length > 1 ? 's' : '' }} to start
+        </p>
+      </div>
     </div>
   </div>
 </template>

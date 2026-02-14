@@ -6,26 +6,26 @@
         Imposter Word Game
       </h1>
       
-      <p class="text-xl text-gray-300">
-        Find the imposter who doesn't know the secret word!
+      <p class="text-xl text-gray-400 max-w-xl mx-auto">
+        A social deduction game where players must identify who has a different word through discussion and voting.
       </p>
 
       <!-- Feature cards -->
       <div class="grid md:grid-cols-3 gap-4 mt-12">
-        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 hover:bg-white/20 transition">
-          <div class="text-4xl mb-2">🎯</div>
-          <h3 class="font-bold mb-2">Strategic</h3>
-          <p class="text-sm text-gray-300">Use your words wisely to find the imposter</p>
+        <div class="group bg-gradient-to-br from-purple-500/10 to-purple-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-purple-500/20 hover:to-purple-600/20 transition-all border border-purple-500/20 hover:border-purple-500/40">
+          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">S</div>
+          <h3 class="font-bold text-lg mb-2">Strategic Gameplay</h3>
+          <p class="text-sm text-gray-400">Use your words wisely to find the impostor</p>
         </div>
-        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 hover:bg-white/20 transition">
-          <div class="text-4xl mb-2">🎤</div>
-          <h3 class="font-bold mb-2">Voice Chat</h3>
-          <p class="text-sm text-gray-300">Real-time voice communication</p>
+        <div class="group bg-gradient-to-br from-pink-500/10 to-pink-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-pink-500/20 hover:to-pink-600/20 transition-all border border-pink-500/20 hover:border-pink-500/40">
+          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">V</div>
+          <h3 class="font-bold text-lg mb-2">Voice Chat</h3>
+          <p class="text-sm text-gray-400">Real-time voice communication</p>
         </div>
-        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 hover:bg-white/20 transition">
-          <div class="text-4xl mb-2">⚡</div>
-          <h3 class="font-bold mb-2">Real-time</h3>
-          <p class="text-sm text-gray-300">Instant updates for all players</p>
+        <div class="group bg-gradient-to-br from-blue-500/10 to-blue-600/10 backdrop-blur-sm rounded-xl p-6 hover:from-blue-500/20 hover:to-blue-600/20 transition-all border border-blue-500/20 hover:border-blue-500/40">
+          <div class="w-12 h-12 mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">R</div>
+          <h3 class="font-bold text-lg mb-2">Real-time Updates</h3>
+          <p class="text-sm text-gray-400">Instant sync for all players</p>
         </div>
       </div>
 
@@ -47,27 +47,33 @@
         </button>
 
         <div v-else class="space-y-6">
-          <div class="flex items-center justify-center gap-4">
-            <img :src="user.user_metadata.avatar_url" class="w-16 h-16 rounded-full border-4 border-purple-500" />
+          <div class="flex items-center justify-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <img :src="user.user_metadata.avatar_url" class="w-16 h-16 rounded-full border-2 border-purple-500 shadow-lg" />
             <div class="text-left">
               <p class="font-bold text-xl">{{ user.user_metadata.full_name }}</p>
-              <p class="text-gray-400">{{ user.email }}</p>
+              <p class="text-gray-400 text-sm">{{ user.email }}</p>
             </div>
           </div>
 
           <div class="flex gap-4 justify-center">
             <router-link 
               to="/create-room"
-              class="bg-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-purple-700 transition-all transform hover:scale-105"
+              class="group bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-500 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50"
             >
-              Create Room
+              <span class="flex items-center gap-2">
+                <span class="text-2xl group-hover:rotate-12 transition-transform">+</span>
+                Create Room
+              </span>
             </router-link>
             
             <router-link 
               to="/join-room"
-              class="bg-pink-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-pink-700 transition-all transform hover:scale-105"
+              class="group bg-gradient-to-r from-pink-600 to-pink-700 px-8 py-4 rounded-xl font-bold text-lg hover:from-pink-500 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg hover:shadow-pink-500/50"
             >
-              Join Room
+              <span class="flex items-center gap-2">
+                <span class="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+                Join Room
+              </span>
             </router-link>
           </div>
 

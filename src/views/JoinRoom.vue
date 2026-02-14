@@ -1,41 +1,42 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white/10 backdrop-blur-sm rounded-xl p-8">
-      <h1 class="text-4xl font-bold mb-8 text-center">Join Room</h1>
+    <div class="max-w-md w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
+      <h1 class="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">Join Room</h1>
+      <p class="text-center text-gray-400 mb-8">Enter the room code to join</p>
       
       <form @submit.prevent="joinRoom" class="space-y-6">
         <div>
-          <label class="block text-sm font-medium mb-2">Room Code</label>
+          <label class="block text-sm font-semibold mb-3 text-gray-300">Room Code</label>
           <input 
             v-model="roomCode"
             type="text"
             required
             maxlength="6"
-            class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-purple-500 focus:outline-none text-2xl text-center uppercase tracking-widest font-bold"
+            class="w-full px-6 py-4 rounded-xl bg-white/5 border-2 border-white/20 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 text-3xl text-center uppercase tracking-[0.5em] font-bold transition-all"
             placeholder="ABC123"
             @input="roomCode = roomCode.toUpperCase()"
           />
-          <p class="text-xs text-gray-400 mt-2">Enter the 6-character room code</p>
+          <p class="text-xs text-gray-500 mt-2 text-center">Enter the 6-character code</p>
         </div>
 
         <button
           type="submit"
           :disabled="loading || roomCode.length !== 6"
-          class="w-full bg-pink-600 py-4 rounded-lg font-bold text-lg hover:bg-pink-700 transition disabled:opacity-50"
+          class="w-full bg-gradient-to-r from-pink-600 to-purple-600 py-4 rounded-xl font-bold text-lg hover:from-pink-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-pink-500/50 transform hover:scale-[1.02] active:scale-[0.98]"
         >
           {{ loading ? 'Joining...' : 'Join Room' }}
         </button>
 
         <router-link 
           to="/"
-          class="block text-center text-gray-400 hover:text-gray-300"
+          class="block text-center text-gray-400 hover:text-gray-300 transition-colors"
         >
-          Back to Home
+          ← Back to Home
         </router-link>
       </form>
 
-      <div v-if="error" class="mt-4 p-4 bg-red-500/20 border border-red-500 rounded-lg">
-        {{ error }}
+      <div v-if="error" class="mt-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl backdrop-blur-sm">
+        <p class="text-red-400 text-sm text-center font-medium">{{ error }}</p>
       </div>
     </div>
   </div>
