@@ -93,9 +93,9 @@
               </div>
               
               <!-- Your Word -->
-              <div class="bg-gray-900 border-4 p-8" :class="isImposter ? 'border-red-600' : 'border-cyan-600'" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
+              <div class="bg-gray-900 border-4 p-8 border-cyan-600" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
                 <p class="text-gray-400 text-xs mb-3 score-display uppercase">▼ YOUR WORD ▼</p>
-                <p class="text-6xl md:text-7xl font-black score-display" :class="isImposter ? 'text-red-400' : 'text-cyan-400'">{{ myWord }}</p>
+                <p class="text-6xl md:text-7xl font-black score-display text-cyan-400">{{ myWord }}</p>
               </div>
               
               <div class="mt-6 px-4 py-3 border-4 bg-yellow-900 border-yellow-700">
@@ -534,7 +534,11 @@ onUnmounted(() => {
 })
 
 const loadGameData = async () => {
+  console.group('📊 LOAD GAME DATA');
+  
   try {
+    console.log('1. Loading room with code:', code);
+    
     // Load room
     const { data: roomData, error: roomError } = await supabase
       .from('rooms')
@@ -542,9 +546,16 @@ const loadGameData = async () => {
       .eq('code', code)
       .single()
     
-    if (roomError) throw roomError
+    if (roomError) {
+      console.error('❌ Room load error:', roomError);
+      throw roomError;
+    }
+    
+    console.log('✅ Room loaded:', roomData);
     room.value = roomData
     gameStartTime.value = roomData.updated_at
+    
+    console.log('2. Loading participants for room:', roomData.id);
     
     // Load participants
     const { data: participantsData, error: participantsError } = await supabase
@@ -552,7 +563,12 @@ const loadGameData = async () => {
       .select('*, users:user_id(*)')
       .eq('room_id', roomData.id)
     
-    if (participantsError) throw participantsError
+    if (participantsError) {
+      console.error('❌ Participants load error:', participantsError);
+      throw participantsError;
+    }
+    
+    console.log('✅ Participants loaded:', participantsData);
     participants.value = participantsData || []
     
     // Initialize speaker order (random shuffle) if not already set
@@ -586,8 +602,12 @@ const loadGameData = async () => {
     if (roomData.status === 'FINISHED') {
       await loadVoteResults()
     }
+    
+    console.log('✅ Game data loaded successfully');
+    console.groupEnd();
   } catch (error) {
-    console.error('Error loading game data:', error)
+    console.error('💥 Error loading game data:', error);
+    console.groupEnd();
     alert('Error loading game: ' + error.message)
   }
 }
@@ -736,48 +756,145 @@ const nextSpeaker = async () => {
 const startVoting = async () => {
   if (!isHost.value) return
   
+  console.group('🎯 START VOTING DEBUG');
+  
   try {
     votingStartTime.value = new Date().toISOString()
     
-    await supabase
+    console.log('1. Current user:', currentUser.value?.id);
+    console.log('2. Room host:', room.value.host_id);
+    console.log('3. Is host:', isHost.value);
+    console.log('4. Room ID:', room.value.id);
+    console.log('5. New status: VOTING');
+    console.log('6. Voting start time:', votingStartTime.value);
+    
+    // Check auth
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('7. Session exists:', session ? 'YES' : 'NO');
+    console.log('8. Session user ID:', session?.user?.id);
+    
+    console.log('9. Attempting UPDATE rooms...');
+    const { data, error } = await supabase
       .from('rooms')
       .update({ status: 'VOTING', updated_at: votingStartTime.value })
       .eq('id', room.value.id)
+      .select();
+    
+    if (error) {
+      console.error('❌ UPDATE FAILED:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw error;
+    }
+    
+    console.log('✅ Room updated successfully:', data);
+    console.groupEnd();
   } catch (error) {
-    console.error('Error starting voting:', error)
+    console.error('💥 START VOTING ERROR:', error);
+    console.groupEnd();
     alert('Error starting voting: ' + error.message)
   }
 }
 
 const submitVote = async (votedUserId) => {
+  console.group('🗳️ SUBMIT VOTE DEBUG');
+  console.log('1. Initial State:', {
+    hasVoted: hasVoted.value,
+    votingForSelf: votedUserId === currentUser.value.id,
+    currentUserId: currentUser.value?.id,
+    votedUserId: votedUserId
+  });
+  
   if (hasVoted.value || votedUserId === currentUser.value.id) {
-    console.log('Cannot vote:', { hasVoted: hasVoted.value, votingSelf: votedUserId === currentUser.value.id })
+    console.warn('❌ Cannot vote - already voted or voting for self');
+    console.groupEnd();
     return
   }
   
   try {
-    console.log('Submitting vote:', {
-      room_id: room.value.id,
-      voter_id: currentUser.value.id,
-      voted_for_id: votedUserId
-    })
+    // Check authentication
+    console.log('2. Auth Check:');
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('   Session:', session ? 'EXISTS' : 'NULL');
+    console.log('   User ID:', session?.user?.id);
+    console.log('   Email:', session?.user?.email);
     
-    const { data, error } = await supabase.from('votes').insert({
-      room_id: room.value.id,
-      voter_id: currentUser.value.id,
-      voted_for_id: votedUserId
-    })
+    // Check if user is participant
+    console.log('3. Participant Check:');
+    const { data: participantCheck, error: participantError } = await supabase
+      .from('room_participants')
+      .select('*')
+      .eq('room_id', room.value.id)
+      .eq('user_id', currentUser.value.id)
+      .single();
     
-    if (error) {
-      console.error('Vote insert error:', error)
-      throw error
+    console.log('   Participant exists:', participantCheck ? 'YES' : 'NO');
+    if (participantError) {
+      console.error('   Participant error:', participantError);
     }
     
-    console.log('Vote submitted successfully:', data)
+    // Check room exists
+    console.log('4. Room Check:');
+    const { data: roomCheck, error: roomError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', room.value.id)
+      .single();
+    
+    console.log('   Room exists:', roomCheck ? 'YES' : 'NO');
+    console.log('   Room status:', roomCheck?.status);
+    if (roomError) {
+      console.error('   Room error:', roomError);
+    }
+    
+    // Check policies
+    console.log('5. Policy Test - Try to read votes:');
+    const { data: votesRead, error: votesReadError } = await supabase
+      .from('votes')
+      .select('*')
+      .eq('room_id', room.value.id);
+    
+    console.log('   Can read votes:', votesReadError ? 'NO' : 'YES');
+    console.log('   Existing votes count:', votesRead?.length || 0);
+    if (votesReadError) {
+      console.error('   Read error:', votesReadError);
+    }
+    
+    // Attempt insert
+    console.log('6. Attempting INSERT:');
+    const voteData = {
+      room_id: room.value.id,
+      voter_id: currentUser.value.id,
+      voted_for_id: votedUserId
+    };
+    console.log('   Vote data:', voteData);
+    
+    const { data, error } = await supabase.from('votes').insert(voteData).select();
+    
+    if (error) {
+      console.error('❌ INSERT FAILED:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw error;
+    }
+    
+    console.log('✅ Vote submitted successfully:', data);
     myVote.value = votedUserId
     hasVoted.value = true
+    console.groupEnd();
   } catch (error) {
-    console.error('Error submitting vote:', error)
+    console.error('💥 CATCH ERROR:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    console.groupEnd();
     alert('Error submitting vote: ' + (error.message || error.hint || 'Unknown error. Check console.'))
   }
 }
