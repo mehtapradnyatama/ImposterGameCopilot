@@ -135,6 +135,20 @@ const loading = ref(false)
 
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
+  if (session?.user) {
+    // Ensure user profile exists in database
+    await supabase.from('users').upsert({
+      id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata.full_name,
+      avatar_url: session.user.user_metadata.avatar_url,
+      total_score: 0,
+      games_played: 0,
+      games_won: 0
+    }, {
+      onConflict: 'id'
+    })
+  }
   user.value = session?.user || null
 })
 

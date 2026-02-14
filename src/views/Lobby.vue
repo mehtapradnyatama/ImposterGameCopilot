@@ -162,6 +162,9 @@ onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
   currentUser.value = session?.user
   
+  console.log('Lobby mounted, current user:', currentUser.value?.id)
+  console.log('Room code:', code)
+  
   await loadRoomData()
   subscribeToUpdates()
 })
@@ -172,22 +175,44 @@ onUnmounted(() => {
 })
 
 const loadRoomData = async () => {
-  // Load room
-  const { data: roomData } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('code', code)
-    .single()
-  
-  room.value = roomData
-  
-  // Load participants
-  const { data: participantsData } = await supabase
-    .from('room_participants')
-    .select('*, users(*)')
-    .eq('room_id', roomData.id)
-  
-  participants.value = participantsData || []
+  try {
+    // Load room
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('code', code)
+      .single()
+    
+    if (roomError) {
+      console.error('Error loading room:', roomError)
+      return
+    }
+    
+    room.value = roomData
+    
+    // Load participants with user data
+    const { data: participantsData, error: participantsError } = await supabase
+      .from('room_participants')
+      .select(`
+        *,
+        users (
+          id,
+          email,
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('room_id', roomData.id)
+    
+    if (participantsError) {
+      console.error('Error loading participants:', participantsError)
+    }
+    
+    console.log('Loaded participants:', participantsData)
+    participants.value = participantsData || []
+  } catch (error) {
+    console.error('Error in loadRoomData:', error)
+  }
 }
 
 const subscribeToUpdates = () => {

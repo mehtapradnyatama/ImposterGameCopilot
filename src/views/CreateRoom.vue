@@ -202,6 +202,19 @@ const createRoom = async () => {
       return
     }
     
+    // Ensure user profile exists
+    await supabase.from('users').upsert({
+      id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata.full_name,
+      avatar_url: session.user.user_metadata.avatar_url,
+      total_score: 0,
+      games_played: 0,
+      games_won: 0
+    }, {
+      onConflict: 'id'
+    })
+    
     const roomCode = generateRoomCode()
     
     const { data: room, error: roomError } = await supabase
@@ -233,7 +246,13 @@ const createRoom = async () => {
         is_host: true
       })
     
-    if (participantError) throw participantError
+    if (participantError) {
+      console.error('Error adding host as participant:', participantError)
+      throw participantError
+    }
+    
+    // Wait for database to sync
+    await new Promise(resolve => setTimeout(resolve, 300))
     
     router.push(`/lobby/${roomCode}`)
   } catch (error) {

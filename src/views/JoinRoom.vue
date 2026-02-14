@@ -80,6 +80,19 @@ const joinRoom = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     
+    // Ensure user profile exists
+    await supabase.from('users').upsert({
+      id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata.full_name,
+      avatar_url: session.user.user_metadata.avatar_url,
+      total_score: 0,
+      games_played: 0,
+      games_won: 0
+    }, {
+      onConflict: 'id'
+    })
+    
     // Check if room exists
     const { data: room, error: roomError } = await supabase
       .from('rooms')
@@ -118,11 +131,20 @@ const joinRoom = async () => {
     
     if (!existing) {
       // Add participant
-      await supabase.from('room_participants').insert({
+      const { error: insertError } = await supabase.from('room_participants').insert({
         room_id: room.id,
         user_id: session.user.id,
         is_host: false
       })
+      
+      if (insertError) {
+        console.error('Error inserting participant:', insertError)
+        error.value = 'Failed to join room'
+        return
+      }
+      
+      // Wait for database to sync
+      await new Promise(resolve => setTimeout(resolve, 300))
     }
     
     router.push(`/lobby/${roomCode.value}`)
