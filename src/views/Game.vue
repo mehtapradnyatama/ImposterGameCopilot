@@ -238,14 +238,14 @@
                   </div>
                 </div>
 
-                <!-- Normal Players Word -->
+                <!-- Most Voted Player's Word -->
                 <div>
-                  <div class="bg-green-900 border-4 border-green-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                    <h3 class="text-xs font-black text-white score-display text-center">■ NORMAL WORD ■</h3>
+                  <div class="bg-yellow-900 border-4 border-yellow-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                    <h3 class="text-xs font-black text-white score-display text-center">■ MOST VOTED PLAYER'S WORD ■</h3>
                   </div>
-                  <div class="bg-green-600 border-4 border-green-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                  <div class="bg-yellow-600 border-4 border-yellow-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
                     <p class="text-2xl font-black text-white score-display">
-                      {{ normalWord.toUpperCase() }}
+                      {{ mostVotedPlayerWord.toUpperCase() }}
                     </p>
                   </div>
                 </div>
@@ -426,6 +426,13 @@ const normalWord = computed(() => {
   return normal?.word || ''
 })
 
+const mostVotedPlayerWord = computed(() => {
+  if (!voteResults.value.length) return ''
+  const mostVoted = voteResults.value[0]
+  const player = participants.value.find(p => p.user_id === mostVoted.user_id)
+  return player?.word || ''
+})
+
 const currentSpeaker = computed(() => {
   if (!speakerOrder.value.length || currentSpeakerIndex.value >= speakerOrder.value.length) return null
   return speakerOrder.value[currentSpeakerIndex.value]
@@ -556,7 +563,7 @@ const loadGameData = async () => {
     
     console.log('✅ Room loaded:', roomData);
     room.value = roomData
-    gameStartTime.value = roomData.created_at
+    gameStartTime.value = roomData.game_start_time || roomData.created_at
     
     console.log('2. Loading participants for room:', roomData.id);
     
@@ -574,10 +581,15 @@ const loadGameData = async () => {
     console.log('✅ Participants loaded:', participantsData);
     participants.value = participantsData || []
     
-    // Initialize speaker order (random shuffle) if not already set
-    if (speakerOrder.value.length === 0 && participants.value.length > 0) {
-      speakerOrder.value = [...participants.value].sort(() => Math.random() - 0.5)
+    // Load speaker order from database (synchronized across all clients)
+    if (roomData.speaker_order && Array.isArray(roomData.speaker_order)) {
+      speakerOrder.value = roomData.speaker_order
+        .map(userId => participants.value.find(p => p.user_id === userId))
+        .filter(p => p) // Remove any null entries
       currentSpeakerIndex.value = 0
+    } else {
+      // Fallback: empty speaker order (should not happen after migration)
+      speakerOrder.value = []
     }
     
     // Get my data
@@ -626,6 +638,17 @@ const subscribeToUpdates = () => {
       filter: `id=eq.${room.value.id}`
     }, async (payload) => {
       room.value = payload.new
+      
+      // Update speaker order and start time when room updates
+      if (payload.new.speaker_order && Array.isArray(payload.new.speaker_order)) {
+        speakerOrder.value = payload.new.speaker_order
+          .map(userId => participants.value.find(p => p.user_id === userId))
+          .filter(p => p)
+      }
+      if (payload.new.game_start_time) {
+        gameStartTime.value = payload.new.game_start_time
+      }
+      
       if (payload.new.status === 'VOTING') {
         votingStartTime.value = new Date().toISOString()
         hasVoted.value = false
@@ -742,17 +765,22 @@ const extendTime = async () => {
 const nextSpeaker = async () => {
   if (!isMyTurn.value) return
   
-  // Move to next speaker
-  if (currentSpeakerIndex.value < speakerOrder.value.length - 1) {
-    currentSpeakerIndex.value++
-    // Update game start time to simulate time skip
-    const newStartTime = new Date(Date.now() - (currentSpeakerIndex.value * room.value.discussion_time * 1000))
+  try {
+    // Calculate new start time to simulate time skip
+    const targetIndex = currentSpeakerIndex.value + 1
+    const newStartTime = new Date(Date.now() - (targetIndex * room.value.discussion_time * 1000))
+    
+    // Update in database so all clients sync
+    await supabase
+      .from('rooms')
+      .update({ game_start_time: newStartTime.toISOString() })
+      .eq('id', room.value.id)
+    
+    // Local update (will be overwritten by subscription)
+    currentSpeakerIndex.value = targetIndex
     gameStartTime.value = newStartTime.toISOString()
-  } else {
-    // All speakers done, start voting if host
-    if (isHost.value) {
-      await startVoting()
-    }
+  } catch (error) {
+    console.error('Error skipping speaker:', error)
   }
 }
 
@@ -818,15 +846,32 @@ const submitVote = async (votedUserId) => {
   }
   
   try {
+    // Check if already voted (prevent duplicate key error)
+    console.log('2. Checking existing vote...');
+    const { data: existingVote } = await supabase
+      .from('votes')
+      .select('id')
+      .eq('room_id', room.value.id)
+      .eq('voter_id', currentUser.value.id)
+      .maybeSingle()
+    
+    if (existingVote) {
+      console.warn('⚠️ Already voted, skipping');
+      hasVoted.value = true
+      myVote.value = votedUserId
+      console.groupEnd();
+      return
+    }
+    
     // Check authentication
-    console.log('2. Auth Check:');
+    console.log('3. Auth Check:');
     const { data: { session } } = await supabase.auth.getSession();
     console.log('   Session:', session ? 'EXISTS' : 'NULL');
     console.log('   User ID:', session?.user?.id);
     console.log('   Email:', session?.user?.email);
     
     // Check if user is participant
-    console.log('3. Participant Check:');
+    console.log('4. Participant Check:');
     const { data: participantCheck, error: participantError } = await supabase
       .from('room_participants')
       .select('*')
@@ -840,7 +885,7 @@ const submitVote = async (votedUserId) => {
     }
     
     // Check room exists
-    console.log('4. Room Check:');
+    console.log('5. Room Check:');
     const { data: roomCheck, error: roomError } = await supabase
       .from('rooms')
       .select('*')
@@ -854,7 +899,7 @@ const submitVote = async (votedUserId) => {
     }
     
     // Check policies
-    console.log('5. Policy Test - Try to read votes:');
+    console.log('6. Policy Test - Try to read votes:');
     const { data: votesRead, error: votesReadError } = await supabase
       .from('votes')
       .select('*')
@@ -867,7 +912,7 @@ const submitVote = async (votedUserId) => {
     }
     
     // Attempt insert
-    console.log('6. Attempting INSERT:');
+    console.log('7. Attempting INSERT:');
     const voteData = {
       room_id: room.value.id,
       voter_id: currentUser.value.id,
@@ -921,16 +966,33 @@ const loadVoteCount = async () => {
 }
 
 const checkAllVoted = async () => {
-  if (!isHost.value) return
+  if (!isHost.value || room.value.status !== 'VOTING') return
   
-  const { data: votes } = await supabase
+  console.group('🔍 CHECK ALL VOTED');
+  console.log('Host checking if all voted...');
+  
+  const { data: votes, error } = await supabase
     .from('votes')
     .select('id')
     .eq('room_id', room.value.id)
   
-  if (votes && votes.length >= participants.value.length) {
-    await finishGame()
+  console.log('Total votes:', votes?.length);
+  console.log('Total participants:', participants.value.length);
+  
+  if (error) {
+    console.error('Error loading votes:', error);
+    console.groupEnd();
+    return
   }
+  
+  if (votes && votes.length >= participants.value.length) {
+    console.log('✅ All players voted! Finishing game...');
+    await finishGame()
+  } else {
+    console.log('⏳ Waiting for more votes...');
+  }
+  
+  console.groupEnd();
 }
 
 const finishGame = async () => {

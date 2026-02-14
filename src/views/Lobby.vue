@@ -268,11 +268,18 @@ const startGame = async () => {
         .eq('id', participant.id)
     }
     
-    // Update room status
+    // Generate speaker order (shuffle all participants for turn-based speaking)
+    const speakerOrder = [...participants.value]
+      .sort(() => Math.random() - 0.5)
+      .map(p => p.user_id)
+    
+    // Update room status with speaker order and start time
     await supabase
       .from('rooms')
       .update({ 
-        status: 'IN_PROGRESS'
+        status: 'IN_PROGRESS',
+        speaker_order: speakerOrder,
+        game_start_time: new Date().toISOString()
       })
       .eq('id', room.value.id)
     
