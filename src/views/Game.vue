@@ -637,10 +637,18 @@ const subscribeToUpdates = () => {
       table: 'rooms',
       filter: `id=eq.${room.value.id}`
     }, async (payload) => {
+      console.group('🔔 REALTIME: Room Updated');
+      console.log('Old game_start_time:', gameStartTime.value);
+      console.log('New game_start_time:', payload.new.game_start_time);
+      console.log('Are they different?', payload.new.game_start_time !== gameStartTime.value);
+      console.log('Room status:', payload.new.status);
+      console.log('Full payload.new:', payload.new);
+      
       room.value = payload.new
       
       // Update speaker order and start time when room updates
       if (payload.new.speaker_order && Array.isArray(payload.new.speaker_order)) {
+        console.log('📋 Speaker order updated:', payload.new.speaker_order);
         speakerOrder.value = payload.new.speaker_order
           .map(userId => participants.value.find(p => p.user_id === userId))
           .filter(p => p)
@@ -648,13 +656,18 @@ const subscribeToUpdates = () => {
       
       // IMMEDIATE RECALCULATION when game_start_time changes
       if (payload.new.game_start_time && payload.new.game_start_time !== gameStartTime.value) {
+        console.log('⚡ game_start_time changed! Recalculating speaker...');
         gameStartTime.value = payload.new.game_start_time
         
         // Recalculate speaker index immediately (no waiting for timer interval)
         if (room.value.status === 'IN_PROGRESS') {
           recalculateSpeakerIndex()
         }
+      } else {
+        console.log('⏭️ game_start_time not changed, skipping recalculation');
       }
+      
+      console.groupEnd();
       
       if (payload.new.status === 'VOTING') {
         votingStartTime.value = new Date().toISOString()
@@ -779,21 +792,41 @@ const nextSpeaker = async () => {
   if (!isMyTurn.value) return
   
   try {
+    console.group('⏭️ NEXT SPEAKER');
+    console.log('Current speaker index:', currentSpeakerIndex.value);
+    console.log('Current speaker:', currentSpeaker.value?.users?.full_name);
+    
     // Calculate new start time to simulate time skip
     const targetIndex = currentSpeakerIndex.value + 1
     const newStartTime = new Date(Date.now() - (targetIndex * room.value.discussion_time * 1000))
     
+    console.log('Target index:', targetIndex);
+    console.log('New start time:', newStartTime.toISOString());
+    console.log('Updating database...');
+    
     // Update in database so all clients sync
-    await supabase
+    const { data, error } = await supabase
       .from('rooms')
       .update({ game_start_time: newStartTime.toISOString() })
       .eq('id', room.value.id)
+      .select()
+    
+    if (error) {
+      console.error('❌ Database update failed:', error);
+      throw error;
+    }
+    
+    console.log('✅ Database updated successfully:', data);
     
     // Local update (will be overwritten by subscription)
     currentSpeakerIndex.value = targetIndex
     gameStartTime.value = newStartTime.toISOString()
+    
+    console.log('🎯 Local state updated');
+    console.groupEnd();
   } catch (error) {
     console.error('Error skipping speaker:', error)
+    console.groupEnd();
   }
 }
 
