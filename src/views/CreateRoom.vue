@@ -1,71 +1,74 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-2xl w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-lg rounded-3xl p-8 border-4 border-purple-500/40 shadow-2xl shadow-purple-500/30">
-      <div class="text-center mb-8 animate-bounce-slow">
-        <h1 class="text-6xl font-black mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent drop-shadow-2xl">CREATE ROOM</h1>
-        <div class="relative inline-block">
-          <div class="absolute -inset-4 bg-gradient-to-r from-purple-600/50 to-pink-600/50 rounded-full blur-2xl animate-pulse"></div>
-          <p class="relative text-gray-300 text-xl font-bold tracking-wide px-6 py-2 bg-gray-900/60 rounded-full border-2 border-purple-500/50">
-            Set up your game
-          </p>
+  <div class="min-h-screen flex items-center justify-center p-4 pixel-grid">
+    <div class="max-w-3xl w-full bg-black border-8 border-yellow-400 p-8 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
+      
+      <!-- Title Screen -->
+      <div class="text-center mb-8">
+        <div class="text-yellow-400 text-xs mb-4 animate-blink score-display">
+          █ SELECT OPTIONS █
         </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-arcade text-yellow-400 score-display">
+          CREATE GAME
+        </h1>
       </div>
       
       <form @submit.prevent="createRoom" class="space-y-6">
-        <div class="group">
-          <label class="block text-lg font-black mb-3 text-purple-300 flex items-center gap-2">
-            <span class="text-2xl">🏠</span> ROOM NAME
+        
+        <!-- Room Name -->
+        <div>
+          <label class="block text-sm mb-3 text-white score-display">
+            ■ ROOM NAME
           </label>
           <input 
             v-model="roomName"
             type="text"
             required
             maxlength="50"
-            class="w-full px-6 py-4 rounded-2xl bg-gray-900/80 border-4 border-purple-500/40 focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-500/50 transition-all text-xl font-bold placeholder-gray-600 hover:border-purple-500/60"
-            placeholder="Your Epic Room..."
+            class="w-full px-6 py-4 bg-gray-900 border-4 border-white focus:border-yellow-400 focus:outline-none transition-all text-lg font-bold placeholder-gray-600 score-display uppercase"
+            placeholder="ARCADE ZONE"
           />
         </div>
 
+        <!-- Settings Grid -->
         <div class="grid md:grid-cols-2 gap-6">
-          <div class="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl p-6 border-4 border-purple-500/40 hover:border-purple-400/60 transition-all hover:shadow-xl hover:shadow-purple-500/30">
-            <label class="block text-lg font-black mb-4 text-purple-300 flex items-center gap-2">
-              <span class="text-2xl">👥</span> MAX PLAYERS
+          
+          <!-- Max Players - Blue -->
+          <div class="bg-blue-600 border-4 border-blue-800 p-6 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+            <label class="block text-xs mb-4 text-white score-display text-center">
+              ■ MAX PLAYERS
             </label>
-            <div class="text-center mb-4 relative">
-              <div class="absolute inset-0 bg-purple-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ maxPlayers }}</span>
-              <span class="relative text-gray-400 text-sm ml-2 font-bold">players</span>
+            <div class="text-center mb-4">
+              <span class="text-6xl font-black text-white score-display">{{ maxPlayers }}</span>
             </div>
             <input 
               v-model.number="maxPlayers"
               type="range"
               min="3"
               max="10"
-              class="w-full h-4 bg-purple-900/50 rounded-full appearance-none cursor-pointer slider-purple hover:h-5 transition-all"
+              class="w-full h-3 bg-blue-900 appearance-none cursor-pointer slider-retro"
             />
-            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
+            <div class="flex justify-between text-xs text-white mt-2 score-display">
               <span>3</span>
               <span>10</span>
             </div>
           </div>
 
-          <div class="group bg-gradient-to-br from-pink-900/30 to-pink-800/20 rounded-2xl p-6 border-4 border-pink-500/40 hover:border-pink-400/60 transition-all hover:shadow-xl hover:shadow-pink-500/30">
-            <label class="block text-lg font-black mb-4 text-pink-300 flex items-center gap-2">
-              <span class="text-2xl">🎭</span> IMPOSTORS
+          <!-- Impostors - Red -->
+          <div class="bg-red-600 border-4 border-red-800 p-6 animate-slide-in-right" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+            <label class="block text-xs mb-4 text-white score-display text-center">
+              ● IMPOSTORS
             </label>
-            <div class="text-center mb-4 relative">
-              <div class="absolute inset-0 bg-pink-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ impostorCount }}</span>
-              <span class="relative text-gray-400 text-sm ml-2 font-bold">impostor{{ impostorCount > 1 ? 's' : '' }}</span>
+            <div class="text-center mb-4">
+              <span class="text-6xl font-black text-white score-display">{{ impostorCount }}</span>
             </div>
             <input 
               v-model.number="impostorCount"
               type="range"
               min="1"
               :max="Math.max(1, Math.floor(maxPlayers / 2))"
-              class="w-full h-4 bg-pink-900/50 rounded-full appearance-none cursor-pointer slider-pink hover:h-5 transition-all"
+              class="w-full h-3 bg-red-900 appearance-none cursor-pointer slider-retro"
             />
-            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
+            <div class="flex justify-between text-xs text-white mt-2 score-display">
               <span>1</span>
               <span>{{ Math.floor(maxPlayers / 2) }}</span>
             </div>
@@ -73,13 +76,14 @@
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
-          <div class="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-2xl p-6 border-4 border-blue-500/40 hover:border-blue-400/60 transition-all hover:shadow-xl hover:shadow-blue-500/30">
-            <label class="block text-lg font-black mb-4 text-blue-300 flex items-center gap-2">
-              <span class="text-2xl">💬</span> DISCUSSION
+          
+          <!-- Discussion Time - Yellow -->
+          <div class="bg-yellow-500 border-4 border-yellow-700 p-6" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+            <label class="block text-xs mb-4 text-black score-display text-center">
+              ▲ DISCUSSION
             </label>
-            <div class="text-center mb-4 relative">
-              <div class="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
+            <div class="text-center mb-4">
+              <span class="text-5xl font-black text-black score-display">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
             </div>
             <input 
               v-model.number="discussionTime"
@@ -87,22 +91,22 @@
               min="30"
               max="300"
               step="30"
-              class="w-full h-4 bg-blue-900/50 rounded-full appearance-none cursor-pointer slider-blue hover:h-5 transition-all"
+              class="w-full h-3 bg-yellow-700 appearance-none cursor-pointer slider-retro"
             />
-            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
-              <span>30s</span>
-              <span>5min</span>
+            <div class="flex justify-between text-xs text-black mt-2 score-display">
+              <span>30S</span>
+              <span>5MIN</span>
             </div>
           </div>
 
-          <div class="group bg-gradient-to-br from-green-900/30 to-green-800/20 rounded-2xl p-6 border-4 border-green-500/40 hover:border-green-400/60 transition-all hover:shadow-xl hover:shadow-green-500/30">
-            <label class="block text-lg font-black mb-4 text-green-300 flex items-center gap-2">
-              <span class="text-2xl">🗳️</span> VOTING
+          <!-- Voting Time - Green -->
+          <div class="bg-green-500 border-4 border-green-700 p-6" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+            <label class="block text-xs mb-4 text-white score-display text-center">
+              ♦ VOTING
             </label>
-            <div class="text-center mb-4 relative">
-              <div class="absolute inset-0 bg-green-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-              <span class="relative text-6xl font-black text-white drop-shadow-2xl">{{ votingTime }}</span>
-              <span class="relative text-gray-400 text-sm ml-1 font-bold">s</span>
+            <div class="text-center mb-4">
+              <span class="text-6xl font-black text-white score-display">{{ votingTime }}</span>
+              <span class="text-sm text-white score-display">S</span>
             </div>
             <input 
               v-model.number="votingTime"
@@ -110,46 +114,44 @@
               min="20"
               max="120"
               step="10"
-              class="w-full h-4 bg-green-900/50 rounded-full appearance-none cursor-pointer slider-green hover:h-5 transition-all"
+              class="w-full h-3 bg-green-700 appearance-none cursor-pointer slider-retro"
             />
-            <div class="flex justify-between text-sm text-gray-400 mt-2 font-bold">
-              <span>20s</span>
-              <span>2min</span>
+            <div class="flex justify-between text-xs text-white mt-2 score-display">
+              <span>20S</span>
+              <span>2MIN</span>
             </div>
           </div>
         </div>
 
-        <div class="group flex items-center bg-gradient-to-r from-cyan-900/30 to-cyan-800/20 rounded-2xl p-6 border-4 border-cyan-500/40 hover:border-cyan-400/60 transition-all cursor-pointer hover:shadow-xl hover:shadow-cyan-500/30">
+        <!-- Voice Chat Toggle -->
+        <div class="flex items-center bg-cyan-600 border-4 border-cyan-800 p-6 cursor-pointer" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
           <input 
             v-model="voiceChatEnabled"
             type="checkbox"
             id="voice"
-            class="w-7 h-7 rounded-lg accent-cyan-600 cursor-pointer"
+            class="w-6 h-6 accent-cyan-900 cursor-pointer border-4"
           />
-          <label for="voice" class="ml-4 cursor-pointer flex-1 font-black text-xl text-cyan-300 flex items-center gap-2">
-            <span class="text-2xl">🎤</span> VOICE CHAT
+          <label for="voice" class="ml-4 cursor-pointer flex-1 text-xs text-white score-display">
+            ◆ VOICE CHAT
           </label>
-          <span v-if="voiceChatEnabled" class="text-green-400 text-lg font-black px-4 py-1 bg-green-900/50 rounded-full border-2 border-green-500/50">ON</span>
-          <span v-else class="text-gray-500 text-lg font-bold px-4 py-1 bg-gray-900/50 rounded-full border-2 border-gray-700/50">OFF</span>
+          <span v-if="voiceChatEnabled" class="text-white text-xs font-black px-4 py-2 bg-green-600 border-4 border-green-800 score-display">ON</span>
+          <span v-else class="text-white text-xs font-black px-4 py-2 bg-gray-700 border-4 border-gray-900 score-display">OFF</span>
         </div>
 
+        <!-- Start Button -->
         <button
           type="submit"
           :disabled="loading"
-          class="group relative w-full bg-gradient-to-r from-purple-600 via-purple-500 to-pink-600 py-6 rounded-2xl font-black text-3xl hover:from-purple-500 hover:via-purple-400 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/60 transform hover:scale-105 active:scale-95 overflow-hidden"
+          class="w-full bg-green-500 border-4 border-green-700 px-8 py-6 text-2xl hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed score-display text-white btn-retro"
         >
-          <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-          <span class="relative flex items-center justify-center gap-3">
-            <span class="text-4xl group-hover:rotate-90 transition-all duration-300">{{ loading ? '⏳' : '🚀' }}</span>
-            <span class="tracking-wider">{{ loading ? 'CREATING...' : 'CREATE ROOM' }}</span>
-          </span>
+          <span class="animate-blink">▶</span> {{ loading ? 'LOADING...' : 'START GAME' }}
         </button>
 
         <router-link 
           to="/"
-          class="block text-center text-gray-400 hover:text-gray-200 transition-colors font-bold text-lg hover:scale-110 transform inline-block"
+          class="block text-center text-gray-400 hover:text-white transition-colors text-xs score-display"
         >
-          ← Back to Home
+          [PRESS ESC TO EXIT]
         </router-link>
       </form>
     </div>
@@ -244,108 +246,39 @@ const createRoom = async () => {
 </script>
 
 <style scoped>
-/* Custom slider styling - Purple */
-.slider-purple::-webkit-slider-thumb {
+/* Retro 8-bit slider styling */
+.slider-retro::-webkit-slider-thumb {
   appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #a855f7, #9333ea);
+  width: 20px;
+  height: 20px;
+  background: white;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
-  transition: all 0.2s;
+  border: 4px solid black;
+  transition: all 0.1s;
 }
 
-.slider-purple::-webkit-slider-thumb:hover {
+.slider-retro::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.7);
 }
 
-.slider-purple::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #a855f7, #9333ea);
+.slider-retro::-webkit-slider-thumb:active {
+  transform: scale(0.9);
+}
+
+.slider-retro::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: white;
   cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
-  transition: all 0.2s;
+  border: 4px solid black;
+  transition: all 0.1s;
 }
 
-.slider-purple::-moz-range-thumb:hover {
+.slider-retro::-moz-range-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.7);
 }
 
-/* Pink slider */
-.slider-pink::-webkit-slider-thumb {
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899, #db2777);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.5);
-  transition: all 0.2s;
-}
-
-.slider-pink::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.7);
-}
-
-.slider-pink::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899, #db2777);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.5);
-  transition: all 0.2s;
-}
-
-/* Blue slider */
-.slider-blue::-webkit-slider-thumb {
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-  transition: all 0.2s;
-}
-
-.slider-blue::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-}
-
-/* Green slider */
-.slider-green::-webkit-slider-thumb {
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #10b981, #059669);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
-  transition: all 0.2s;
-}
-
-.slider-green::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #10b981, #059669);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+.slider-retro::-moz-range-thumb:active {
+  transform: scale(0.9);
 }
 </style>

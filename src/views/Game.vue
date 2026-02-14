@@ -1,51 +1,55 @@
 <template>
-  <div class="min-h-screen p-4 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+  <div class="min-h-screen p-4 pixel-grid">
     <div class="max-w-7xl mx-auto">
-      <!-- Game Header -->
-      <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-5 mb-4 border border-white/20 shadow-xl">
+      <!-- Game Header - Arcade Stage Display -->
+      <div class="bg-black border-8 border-yellow-400 p-6 mb-4 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
         <div class="flex justify-between items-center">
           <div>
-            <h1 class="text-2xl font-bold mb-1">{{ room?.name }}</h1>
-            <p class="text-sm text-gray-400">{{ participants.length }} Players · {{ impostorCount }} Impostor{{ impostorCount > 1 ? 's' : '' }}</p>
+            <h1 class="text-2xl font-black mb-1 text-yellow-400 score-display uppercase">{{ room?.name }}</h1>
+            <p class="text-xs text-white score-display">{{ participants.length }} PLAYERS ● {{ impostorCount }} IMPOSTOR{{ impostorCount > 1 ? 'S' : '' }}</p>
           </div>
           <div class="text-right">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">Phase</p>
-            <p class="text-2xl font-bold" :class="phaseColor">{{ phaseText }}</p>
+            <p class="text-xs text-gray-400 score-display mb-1">■ STAGE</p>
+            <div class="px-6 py-2 border-4" :class="phaseColorClass" :style="phaseBoxShadow">
+              <p class="text-xl font-black score-display" :class="phaseTextColor">{{ phaseText.toUpperCase() }}</p>
+            </div>
           </div>
         </div>
         
-        <!-- Timer -->
+        <!-- Timer - Arcade Style -->
         <div v-if="timeLeft > 0 && room?.status !== 'FINISHED'" class="mt-4">
-          <div class="flex justify-between text-sm mb-2">
-            <span class="font-medium">Time Remaining</span>
-            <span class="font-bold text-lg" :class="timeLeft < 30 ? 'text-red-400' : 'text-purple-400'">{{ Math.floor(timeLeft / 60) }}:{{ String(timeLeft % 60).padStart(2, '0') }}</span>
+          <div class="flex justify-between text-xs mb-2">
+            <span class="font-black text-white score-display">■ TIME REMAINING</span>
+            <span class="font-black text-3xl score-display" :class="timeLeft < 30 ? 'text-red-400' : 'text-cyan-400'">{{ Math.floor(timeLeft / 60) }}:{{ String(timeLeft % 60).padStart(2, '0') }}</span>
           </div>
-          <div class="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+          <div class="w-full bg-gray-800 border-4 border-gray-900 h-6 relative" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
             <div 
-              class="h-3 rounded-full transition-all duration-500" 
-              :class="timeLeft < 30 ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-purple-500 to-pink-500'"
+              class="h-full transition-all duration-500" 
+              :class="timeLeft < 30 ? 'bg-red-500' : 'bg-cyan-400'"
               :style="{ width: timePercentage + '%' }"
             ></div>
           </div>
         </div>
 
-        <!-- Host Controls -->
+        <!-- Host Controls - Arcade Buttons -->
         <div v-if="isHost && room?.status === 'IN_PROGRESS'" class="mt-4 flex gap-3">
           <button 
             @click="extendTime"
             :disabled="extendCount >= 2"
-            class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold shadow-lg"
+            class="flex-1 bg-blue-600 border-4 border-blue-800 px-4 py-3 hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black score-display text-white"
+            style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
           >
             <span class="flex items-center justify-center gap-2">
-              <span class="text-lg">+30s</span>
-              <span>Extend ({{ extendCount }}/2)</span>
+              <span class="text-base">▲</span>
+              <span>+30S EXTEND ({{ extendCount }}/2)</span>
             </span>
           </button>
           <button 
             @click="startVoting"
-            class="flex-1 bg-gradient-to-r from-yellow-600 to-orange-600 px-4 py-2.5 rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all text-sm font-bold shadow-lg"
+            class="flex-1 bg-yellow-500 border-4 border-yellow-700 px-4 py-3 hover:bg-yellow-400 transition-all text-xs font-black score-display text-black"
+            style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
           >
-            Start Voting Now
+            START VOTING NOW
           </button>
         </div>
       </div>
@@ -53,58 +57,65 @@
       <div class="grid lg:grid-cols-3 gap-4">
         <!-- Main Game Area -->
         <div class="lg:col-span-2 space-y-4">
-          <!-- Your Word Display -->
-          <div class="relative overflow-hidden bg-gradient-to-br rounded-2xl p-8 text-center border-2 shadow-2xl" :class="isImposter ? 'from-pink-900/50 to-red-900/50 border-pink-500/50' : 'from-purple-900/50 to-blue-900/50 border-purple-500/50'">
-            <div class="absolute inset-0 bg-gradient-to-br opacity-10" :class="isImposter ? 'from-pink-500 to-red-500' : 'from-purple-500 to-blue-500'"></div>
-            <div class="relative">
-              <p class="text-sm font-semibold mb-2 uppercase tracking-wider" :class="isImposter ? 'text-pink-400' : 'text-purple-400'">Your Role</p>
-              <div class="inline-block px-6 py-2 rounded-full mb-4" :class="isImposter ? 'bg-pink-500/20' : 'bg-purple-500/20'">
-                <p class="text-xl font-bold" :class="isImposter ? 'text-pink-300' : 'text-purple-300'">
-                  {{ isImposter ? 'IMPOSTOR' : 'NORMAL PLAYER' }}
+          <!-- Your Word Display - Huge Arcade Score Style -->
+          <div class="relative bg-black border-8 p-8 text-center" :class="isImposter ? 'border-red-500' : 'border-cyan-400'" :style="isImposter ? 'box-shadow: 8px 8px 0 rgba(239, 68, 68, 0.5);' : 'box-shadow: 8px 8px 0 rgba(34, 211, 238, 0.5);'">
+            <div>
+              <div class="mb-4">
+                <p class="text-xs font-black mb-3 score-display uppercase" :class="isImposter ? 'text-red-400' : 'text-cyan-400'">■ YOUR ROLE ■</p>
+                <div class="inline-block px-6 py-2 border-4 mb-4" :class="isImposter ? 'bg-red-600 border-red-800' : 'bg-cyan-600 border-cyan-800'" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                  <p class="text-xl font-black score-display" :class="isImposter ? 'text-white' : 'text-white'">
+                    {{ isImposter ? 'IMPOSTOR' : 'NORMAL PLAYER' }}
+                  </p>
+                </div>
+              </div>
+              <div class="bg-gray-900 border-4 p-8 mt-4" :class="isImposter ? 'border-red-600' : 'border-cyan-600'" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
+                <p class="text-gray-400 text-xs mb-3 score-display uppercase">▼ YOUR WORD ▼</p>
+                <p class="text-6xl md:text-7xl font-black score-display" :class="isImposter ? 'text-red-400' : 'text-cyan-400'">{{ myWord }}</p>
+              </div>
+              <div class="mt-6 px-4 py-3 border-4" :class="isImposter ? 'bg-red-900 border-red-700' : 'bg-cyan-900 border-cyan-700'">
+                <p class="text-white text-xs leading-relaxed score-display">
+                  {{ isImposter 
+                    ? 'YOU HAVE A DIFFERENT WORD! BLEND IN WITHOUT GETTING CAUGHT.' 
+                    : 'FIND PLAYERS WITH DIFFERENT WORDS THROUGH DISCUSSION!' 
+                  }}
                 </p>
               </div>
-              <div class="bg-black/40 backdrop-blur-sm rounded-2xl p-8 mt-4 border-2" :class="isImposter ? 'border-pink-500/30' : 'border-purple-500/30'">
-                <p class="text-gray-400 text-sm mb-3 uppercase tracking-wide">Your Word</p>
-                <p class="text-6xl font-black" :class="isImposter ? 'text-pink-400' : 'text-purple-400'">{{ myWord }}</p>
-              </div>
-              <p class="text-gray-300 mt-6 leading-relaxed">
-                {{ isImposter 
-                  ? 'You have a different word! Blend in without getting caught.' 
-                  : 'Find players with different words through discussion!' 
-                }}
-              </p>
             </div>
           </div>
 
-          <!-- Discussion Phase -->
-          <div v-if="room?.status === 'IN_PROGRESS'" class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <!-- STAGE 2: Discussion Phase -->
+          <div v-if="room?.status === 'IN_PROGRESS'" class="bg-gray-900 border-4 border-blue-500 p-6" style="box-shadow: 6px 6px 0 rgba(59, 130, 246, 0.5);">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center font-bold text-xl">D</div>
-              <h2 class="text-2xl font-bold">Discussion Phase</h2>
+              <div class="w-10 h-10 bg-blue-600 border-4 border-blue-800 flex items-center justify-center font-black text-xl score-display">2</div>
+              <h2 class="text-2xl font-black text-blue-400 score-display">STAGE 2: DISCUSSION</h2>
             </div>
-            <p class="text-gray-300 mb-4 leading-relaxed">
-              Talk with other players using the text chat or voice chat below. 
-              {{ isHost ? 'As the host, you can start voting anytime!' : 'Wait for the host to start voting.' }}
-            </p>
+            <div class="bg-blue-900 border-4 border-blue-700 p-4 mb-4">
+              <p class="text-white text-xs leading-relaxed score-display uppercase">
+                TALK WITH OTHER PLAYERS USING CHAT OR VOICE. 
+                {{ isHost ? 'AS HOST, YOU CAN START VOTING ANYTIME!' : 'WAIT FOR HOST TO START VOTING.' }}
+              </p>
+            </div>
             
-            <!-- Voice Chat Controls -->
-            <div v-if="room?.voice_chat_enabled" class="bg-white/5 rounded-xl p-5 border border-white/10">
-              <h3 class="font-bold mb-4 text-lg">Voice Chat</h3>
+            <!-- Voice Chat Controls - Arcade Style -->
+            <div v-if="room?.voice_chat_enabled" class="bg-black border-4 border-purple-500 p-5" style="box-shadow: 4px 4px 0 rgba(168, 85, 247, 0.5);">
+              <h3 class="font-black mb-4 text-base text-purple-400 score-display">■ VOICE CHAT</h3>
               <div class="flex gap-3 mb-3">
                 <button 
                   @click="toggleVoiceChat"
-                  :class="isVoiceConnected ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'"
-                  class="flex-1 px-6 py-3 rounded-xl font-bold transition-all shadow-lg"
+                  :class="isVoiceConnected ? 'bg-green-600 border-green-800 hover:bg-green-500' : 'bg-purple-600 border-purple-800 hover:bg-purple-500'"
+                  class="flex-1 border-4 px-6 py-3 font-black transition-all score-display text-white"
+                  style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
                 >
-                  {{ isVoiceConnected ? 'Connected' : 'Join Voice' }}
+                  {{ isVoiceConnected ? 'CONNECTED' : 'JOIN VOICE' }}
                 </button>
                 
                 <button
                   v-if="isVoiceConnected"
                   @click="toggleVoiceMode"
-                  class="bg-gradient-to-r from-gray-600 to-gray-700 px-5 py-3 rounded-xl hover:from-gray-500 hover:to-gray-600 transition-all font-semibold"
+                  class="bg-gray-700 border-4 border-gray-900 px-5 py-3 hover:bg-gray-600 transition-all font-black score-display text-white"
+                  style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
                 >
-                  {{ isAlwaysOn ? 'Always On' : 'Push-to-Talk' }}
+                  {{ isAlwaysOn ? 'ALWAYS ON' : 'PUSH-TO-TALK' }}
                 </button>
               </div>
               
@@ -115,182 +126,214 @@
                 @mouseleave="stopTalking"
                 @touchstart="startTalking"
                 @touchend="stopTalking"
-                :class="isTalking ? 'bg-gradient-to-r from-red-600 to-rose-600' : 'bg-gradient-to-r from-gray-600 to-gray-700'"
-                class="w-full px-6 py-5 rounded-xl font-bold transition-all text-lg shadow-lg"
+                :class="isTalking ? 'bg-red-600 border-red-800 animate-pixel-pulse' : 'bg-gray-700 border-gray-900'"
+                class="w-full border-4 px-6 py-5 font-black transition-all text-lg score-display text-white"
+                style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
               >
-                {{ isTalking ? 'TALKING...' : 'Hold to Talk' }}
+                {{ isTalking ? '● TALKING...' : 'HOLD TO TALK' }}
               </button>
 
-              <p v-if="isVoiceConnected && isAlwaysOn" class="text-green-400 text-center mt-3 font-semibold">
-                • Microphone is always on
+              <p v-if="isVoiceConnected && isAlwaysOn" class="text-green-400 text-center mt-3 font-black score-display text-xs">
+                ● MICROPHONE IS ALWAYS ON
               </p>
             </div>
           </div>
 
-          <!-- Voting Phase -->
-          <div v-if="room?.status === 'VOTING'" class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <!-- STAGE 3: Voting Phase -->
+          <div v-if="room?.status === 'VOTING'" class="bg-gray-900 border-4 border-yellow-500 p-6" style="box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.5);">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center font-bold text-xl">V</div>
-              <h2 class="text-2xl font-bold">Voting Phase</h2>
+              <div class="w-10 h-10 bg-yellow-500 border-4 border-yellow-700 flex items-center justify-center font-black text-xl text-black score-display">3</div>
+              <h2 class="text-2xl font-black text-yellow-400 score-display">STAGE 3: VOTING</h2>
             </div>
-            <p class="text-gray-300 mb-5 leading-relaxed">Vote for who you think is the impostor!</p>
+            <div class="bg-yellow-900 border-4 border-yellow-700 p-4 mb-5">
+              <p class="text-white text-xs leading-relaxed score-display uppercase">VOTE FOR WHO YOU THINK IS THE IMPOSTOR!</p>
+            </div>
             
-            <div class="grid md:grid-cols-2 gap-3">
+            <!-- Voting Buttons - Arcade Character Cards -->
+            <div class="grid md:grid-cols-2 gap-4">
               <button
                 v-for="participant in participants"
                 :key="participant.id"
                 @click="submitVote(participant.user_id)"
                 :disabled="hasVoted || participant.user_id === currentUser?.id"
-                :class="myVote === participant.user_id ? 'ring-4 ring-yellow-400 bg-yellow-500/20 border-yellow-400' : 'border-white/10 hover:border-white/30'"
-                class="flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-xl p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-2"
+                class="flex items-center gap-4 p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-4"
+                :class="myVote === participant.user_id ? 'bg-yellow-500 border-yellow-700' : 'bg-black border-white hover:border-yellow-400'"
+                :style="myVote === participant.user_id ? 'box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
               >
-                <img :src="participant.users.avatar_url" class="w-14 h-14 rounded-full border-2 border-purple-400" />
+                <img :src="participant.users.avatar_url" class="w-14 h-14 border-4" :class="myVote === participant.user_id ? 'border-yellow-900' : 'border-cyan-400'" style="image-rendering: pixelated;" />
                 <div class="flex-1 text-left">
-                  <span class="font-bold text-lg">{{ participant.users.full_name }}</span>
-                  <p v-if="participant.user_id === currentUser?.id" class="text-xs text-gray-400">(You)</p>
+                  <span class="font-black text-base score-display" :class="myVote === participant.user_id ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
+                  <p v-if="participant.user_id === currentUser?.id" class="text-xs score-display" :class="myVote === participant.user_id ? 'text-gray-700' : 'text-gray-400'">(YOU)</p>
                 </div>
+                <span v-if="myVote === participant.user_id" class="text-2xl animate-blink">▶</span>
               </button>
             </div>
             
-            <div v-if="hasVoted" class="mt-5 p-4 bg-green-500/10 border border-green-500/50 rounded-xl text-center">
-              <p class="text-green-400 font-semibold">Vote submitted! Waiting for others...</p>
+            <div v-if="hasVoted" class="mt-5 bg-green-600 border-4 border-green-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+              <p class="text-white font-black score-display text-xs">VOTE SUBMITTED! WAITING FOR OTHERS...</p>
             </div>
-            <p class="text-center text-gray-400 mt-3 font-medium">{{ voteCount }}/{{ participants.length }} voted</p>
+            <div class="text-center mt-3 px-4 py-2 bg-gray-800 border-4 border-gray-900 inline-block" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+              <p class="text-white font-black score-display text-xs">{{ voteCount }}/{{ participants.length }} VOTED</p>
+            </div>
           </div>
 
-          <!-- Results Phase -->
-          <div v-if="room?.status === 'FINISHED'" class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <!-- STAGE 4: Results Phase - GAME OVER Screen -->
+          <div v-if="room?.status === 'FINISHED'" class="bg-black border-8 border-red-500 p-6 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(239, 68, 68, 0.5);">
             <div class="text-center mb-6">
-              <h2 class="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">Game Over</h2>
-              <p class="text-gray-400">Results & Scoreboard</p>
+              <div class="text-red-500 text-xs mb-4 animate-blink score-display">
+                ███ GAME OVER ███
+              </div>
+              <h2 class="text-5xl font-black mb-2 text-red-500 score-display animate-pixel-pulse">RESULTS</h2>
             </div>
             
+            <!-- The Impostors -->
             <div class="mb-6">
-              <h3 class="text-lg font-bold mb-3 text-gray-300 uppercase tracking-wide">The Impostor(s)</h3>
+              <div class="bg-red-900 border-4 border-red-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                <h3 class="text-base font-black text-white score-display text-center">■ THE IMPOSTOR(S) ■</h3>
+              </div>
               <div class="space-y-3">
                 <div 
                   v-for="impostor in impostors"
                   :key="impostor.id"
-                  class="flex items-center gap-4 bg-gradient-to-r from-red-900/30 to-pink-900/30 rounded-xl p-4 border-2 border-red-500/50"
+                  class="flex items-center gap-4 bg-red-600 border-4 border-red-800 p-4"
+                  style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);"
                 >
-                  <img :src="impostor.users.avatar_url" class="w-16 h-16 rounded-full border-4 border-red-500 shadow-lg" />
+                  <img :src="impostor.users.avatar_url" class="w-16 h-16 border-4 border-red-900" style="image-rendering: pixelated;" />
                   <div class="flex-1">
-                    <p class="text-2xl font-bold">{{ impostor.users.full_name }}</p>
-                    <p class="text-red-400 font-semibold uppercase text-sm tracking-wide">Impostor</p>
-                    <p class="text-yellow-400 font-bold text-lg mt-1">{{ impostor.word }}</p>
+                    <p class="text-2xl font-black text-white score-display">{{ impostor.users.full_name.toUpperCase() }}</p>
+                    <p class="text-red-200 font-black text-xs score-display mt-1">IMPOSTOR</p>
+                    <p class="text-yellow-400 font-black text-lg score-display mt-1">{{ impostor.word.toUpperCase() }}</p>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- Normal Players Word -->
             <div class="mb-6">
-              <h3 class="text-lg font-bold mb-3 text-gray-300 uppercase tracking-wide">Normal Players Had</h3>
-              <div class="bg-gradient-to-r from-green-900/30 to-emerald-900/30 rounded-xl p-6 border-2 border-green-500/50">
-                <p class="text-4xl font-bold text-center text-green-400">
-                  {{ normalWord }}
+              <div class="bg-green-900 border-4 border-green-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                <h3 class="text-base font-black text-white score-display text-center">■ NORMAL PLAYERS HAD ■</h3>
+              </div>
+              <div class="bg-green-600 border-4 border-green-800 p-6 text-center" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+                <p class="text-5xl font-black text-white score-display">
+                  {{ normalWord.toUpperCase() }}
                 </p>
               </div>
             </div>
 
+            <!-- Vote Results -->
             <div class="mb-6">
-              <h3 class="text-lg font-bold mb-3 text-gray-300 uppercase tracking-wide">Vote Results</h3>
+              <div class="bg-yellow-900 border-4 border-yellow-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                <h3 class="text-base font-black text-white score-display text-center">■ VOTE RESULTS ■</h3>
+              </div>
               <div class="space-y-2">
                 <div 
                   v-for="result in voteResults"
                   :key="result.user_id"
-                  class="flex items-center gap-3 bg-white/5 rounded-xl p-3 border-2 transition-all"
-                  :class="result.is_impostor ? 'border-red-500/50 bg-red-500/10' : 'border-white/10'"
+                  class="flex items-center gap-3 p-3 border-4 transition-all"
+                  :class="result.is_impostor ? 'bg-red-600 border-red-800' : 'bg-gray-800 border-gray-900'"
+                  :style="result.is_impostor ? 'box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
                 >
-                  <img :src="result.avatar_url" class="w-12 h-12 rounded-full" />
-                  <span class="flex-1 font-bold">
-                    {{ result.full_name }}
-                    <span v-if="result.is_impostor" class="text-red-400 ml-2 text-xs uppercase tracking-wide">Impostor</span>
+                  <img :src="result.avatar_url" class="w-12 h-12 border-4" :class="result.is_impostor ? 'border-red-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
+                  <span class="flex-1 font-black text-white score-display text-sm">
+                    {{ result.full_name.toUpperCase() }}
+                    <span v-if="result.is_impostor" class="text-red-300 ml-2 text-xs">IMPOSTOR</span>
                   </span>
-                  <span class="text-2xl font-bold">{{ result.votes }}</span>
-                  <span class="text-xs text-gray-400">vote{{ result.votes !== 1 ? 's' : '' }}</span>
+                  <span class="text-3xl font-black text-white score-display">{{ result.votes }}</span>
+                  <span class="text-xs text-gray-300 score-display">VOTE{{ result.votes !== 1 ? 'S' : '' }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="text-center mb-6 p-6 bg-gradient-to-r rounded-xl" :class="gameOutcome.includes('Win') ? 'from-green-900/30 to-emerald-900/30 border-2 border-green-500/50' : 'from-red-900/30 to-pink-900/30 border-2 border-red-500/50'">
-              <p class="text-3xl font-bold">
-                {{ gameOutcome }}
+            <!-- Victory/Defeat Banner -->
+            <div class="text-center mb-6 p-8 border-8 animate-pixel-pulse" :class="gameOutcome.includes('Win') ? 'bg-green-600 border-green-800' : 'bg-red-600 border-red-800'" :style="gameOutcome.includes('Win') ? 'box-shadow: 8px 8px 0 rgba(22, 163, 74, 0.8);' : 'box-shadow: 8px 8px 0 rgba(220, 38, 38, 0.8);'">
+              <p class="text-4xl font-black text-white score-display">
+                {{ gameOutcome.toUpperCase() }}
               </p>
             </div>
 
+            <!-- Final Scoreboard -->
             <div class="mb-6">
-              <h3 class="text-2xl font-bold mb-4 text-center">Final Scoreboard</h3>
+              <div class="bg-purple-900 border-4 border-purple-700 p-3 mb-4" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                <h3 class="text-2xl font-black text-white score-display text-center">■ FINAL SCOREBOARD ■</h3>
+              </div>
               <div class="space-y-2">
                 <div 
                   v-for="(participant, index) in sortedParticipants"
                   :key="participant.id"
-                  class="flex items-center gap-4 rounded-xl p-4 border-2 transition-all"
-                  :class="index === 0 ? 'bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border-yellow-500/50' : 'bg-white/5 border-white/10'"
+                  class="flex items-center gap-4 p-4 border-4 transition-all"
+                  :class="index === 0 ? 'bg-yellow-500 border-yellow-700' : index === 1 ? 'bg-gray-500 border-gray-700' : index === 2 ? 'bg-orange-600 border-orange-800' : 'bg-gray-800 border-gray-900'"
+                  :style="index === 0 ? 'box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
                 >
-                  <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl" :class="index === 0 ? 'bg-yellow-500 text-yellow-900' : index === 1 ? 'bg-gray-400 text-gray-900' : index === 2 ? 'bg-orange-600 text-orange-100' : 'bg-gray-700 text-gray-300'">
+                  <div class="w-10 h-10 flex items-center justify-center font-black text-2xl score-display" :class="index === 0 ? 'bg-yellow-700 text-black border-4 border-yellow-900' : index === 1 ? 'bg-gray-700 text-white border-4 border-gray-900' : index === 2 ? 'bg-orange-800 text-white border-4 border-orange-900' : 'bg-gray-900 text-gray-400 border-4 border-black'">
                     {{ index + 1 }}
                   </div>
-                  <img :src="participant.users.avatar_url" class="w-12 h-12 rounded-full border-2" :class="index === 0 ? 'border-yellow-400' : 'border-gray-600'" />
-                  <span class="flex-1 text-left font-bold">{{ participant.users.full_name }}</span>
-                  <span class="text-2xl font-bold" :class="index === 0 ? 'text-yellow-400' : 'text-purple-400'">{{ participant.score }}</span>
-                  <span class="text-xs text-gray-400">pts</span>
+                  <img :src="participant.users.avatar_url" class="w-12 h-12 border-4" :class="index === 0 ? 'border-yellow-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
+                  <span class="flex-1 text-left font-black text-base score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
+                  <span class="text-3xl font-black score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.score }}</span>
+                  <span class="text-xs score-display" :class="index === 0 ? 'text-gray-800' : 'text-gray-400'">PTS</span>
                 </div>
               </div>
             </div>
 
+            <!-- Return Home Button -->
             <button 
               @click="returnHome"
-              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-4 rounded-xl font-bold text-lg hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02]"
+              class="w-full bg-purple-600 border-4 border-purple-800 px-8 py-6 text-2xl hover:bg-purple-500 transition-all score-display text-white btn-retro"
             >
-              Back to Home
+              <span class="flex items-center justify-center gap-3">
+                <span class="text-3xl">◀</span>
+                <span>BACK TO HOME</span>
+              </span>
             </button>
           </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Sidebar - Arcade Side Panels -->
         <div class="space-y-4">
-          <!-- Players -->
-          <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-            <h3 class="font-bold mb-3 text-gray-300 uppercase tracking-wide text-sm">Players ({{ participants.length }})</h3>
+          <!-- Players Panel -->
+          <div class="bg-gray-900 border-4 border-purple-500 p-4" style="box-shadow: 6px 6px 0 rgba(168, 85, 247, 0.5);">
+            <h3 class="font-black mb-3 text-purple-400 text-xs score-display">■ PLAYERS ({{ participants.length }}) ■</h3>
             <div class="space-y-2">
               <div 
                 v-for="participant in participants"
                 :key="participant.id"
-                class="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10"
+                class="flex items-center gap-2 bg-black border-2 border-purple-700 p-2"
+                style="box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);"
               >
-                <img :src="participant.users.avatar_url" class="w-9 h-9 rounded-full border-2 border-purple-500/50" />
-                <span class="text-sm flex-1 font-medium">{{ participant.users.full_name }}</span>
-                <span class="text-xs font-bold px-2 py-1 rounded bg-purple-500/20 text-purple-300">{{ participant.score }}</span>
+                <img :src="participant.users.avatar_url" class="w-9 h-9 border-2 border-purple-500" style="image-rendering: pixelated;" />
+                <span class="text-xs flex-1 font-black text-white score-display">{{ participant.users.full_name.toUpperCase() }}</span>
+                <span class="text-xs font-black px-2 py-1 bg-purple-600 border-2 border-purple-800 text-white score-display">{{ participant.score }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Chat -->
-          <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-            <h3 class="font-bold mb-3 text-gray-300 uppercase tracking-wide text-sm">Chat</h3>
-            <div class="h-64 overflow-y-auto mb-3 space-y-2 bg-white/5 rounded-xl p-3 border border-white/10">
+          <!-- Chat Panel -->
+          <div class="bg-gray-900 border-4 border-green-500 p-4" style="box-shadow: 6px 6px 0 rgba(34, 197, 94, 0.5);">
+            <h3 class="font-black mb-3 text-green-400 text-xs score-display">■ CHAT ■</h3>
+            <div class="h-64 overflow-y-auto mb-3 bg-black border-2 border-green-700 p-3 space-y-2" style="box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.5);">
               <div 
                 v-for="message in chatMessages"
                 :key="message.id"
-                class="text-sm"
+                class="text-xs"
               >
-                <span class="font-bold text-purple-400">{{ message.users.full_name }}:</span>
-                <span class="ml-1 text-gray-300">{{ message.message }}</span>
+                <span class="font-black text-green-400 score-display">{{ message.users.full_name.toUpperCase() }}:</span>
+                <span class="ml-1 text-white score-display">{{ message.message }}</span>
               </div>
-              <p v-if="chatMessages.length === 0" class="text-gray-500 text-center py-8 text-xs">No messages yet...</p>
+              <p v-if="chatMessages.length === 0" class="text-gray-500 text-center py-8 text-xs score-display">NO MESSAGES YET...</p>
             </div>
             <form @submit.prevent="sendMessage" class="flex gap-2">
               <input 
                 v-model="newMessage"
                 type="text"
-                placeholder="Type a message..."
-                class="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 text-sm transition-all"
+                placeholder="TYPE MESSAGE..."
+                class="flex-1 px-3 py-2 bg-black border-2 border-green-600 focus:outline-none focus:border-green-400 text-xs transition-all text-white score-display uppercase placeholder-gray-600"
               />
               <button 
                 type="submit"
-                class="bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all font-semibold text-sm"
+                class="bg-green-600 border-2 border-green-800 px-4 py-2 hover:bg-green-500 transition-all font-black text-xs score-display text-white"
+                style="box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);"
               >
-                Send
+                SEND
               </button>
             </form>
           </div>
@@ -368,6 +411,36 @@ const phaseColor = computed(() => {
     'FINISHED': 'text-green-400'
   }
   return colors[room.value.status] || 'text-gray-400'
+})
+
+const phaseColorClass = computed(() => {
+  if (!room.value) return 'bg-gray-800 border-gray-900'
+  const colors = {
+    'IN_PROGRESS': 'bg-blue-600 border-blue-800',
+    'VOTING': 'bg-yellow-500 border-yellow-700',
+    'FINISHED': 'bg-green-600 border-green-800'
+  }
+  return colors[room.value.status] || 'bg-gray-800 border-gray-900'
+})
+
+const phaseTextColor = computed(() => {
+  if (!room.value) return 'text-gray-400'
+  const colors = {
+    'IN_PROGRESS': 'text-white',
+    'VOTING': 'text-black',
+    'FINISHED': 'text-white'
+  }
+  return colors[room.value.status] || 'text-gray-400'
+})
+
+const phaseBoxShadow = computed(() => {
+  if (!room.value) return 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'
+  const shadows = {
+    'IN_PROGRESS': 'box-shadow: 4px 4px 0 rgba(37, 99, 235, 0.8);',
+    'VOTING': 'box-shadow: 4px 4px 0 rgba(234, 179, 8, 0.8);',
+    'FINISHED': 'box-shadow: 4px 4px 0 rgba(22, 163, 74, 0.8);'
+  }
+  return shadows[room.value.status] || 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'
 })
 
 const timePercentage = computed(() => {

@@ -1,60 +1,61 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-lg rounded-3xl p-10 border-4 border-pink-500/40 shadow-2xl shadow-pink-500/30 animate-popup">
-      <div class="text-center mb-8 animate-bounce-slow">
-        <h1 class="text-6xl font-black mb-3 bg-gradient-to-r from-pink-400 via-rose-400 to-purple-400 bg-clip-text text-transparent drop-shadow-2xl">JOIN ROOM</h1>
-        <div class="relative inline-block">
-          <div class="absolute -inset-4 bg-gradient-to-r from-pink-600/50 to-purple-600/50 rounded-full blur-2xl animate-pulse"></div>
-          <p class="relative text-gray-300 text-xl font-bold tracking-wide px-6 py-2 bg-gray-900/60 rounded-full border-2 border-pink-500/50">
-            Enter the code
-          </p>
+  <div class="min-h-screen flex items-center justify-center p-4 pixel-grid">
+    <div class="max-w-lg w-full bg-black border-8 border-yellow-400 p-10 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
+      
+      <!-- Title Screen -->
+      <div class="text-center mb-8">
+        <div class="text-yellow-400 text-xs mb-4 animate-blink score-display">
+          █ ENTER ROOM CODE █
         </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-arcade text-yellow-400 score-display">
+          JOIN GAME
+        </h1>
       </div>
       
       <form @submit.prevent="joinRoom" class="space-y-6">
-        <div class="group">
-          <label class="block text-lg font-black mb-3 text-pink-300 flex items-center justify-center gap-2">
-            <span class="text-2xl">🔑</span> ROOM CODE
+        
+        <!-- Room Code Input - Arcade High Score Style -->
+        <div>
+          <label class="block text-xs mb-4 text-center text-yellow-400 score-display">
+            ■ ROOM CODE ■
           </label>
-          <div class="relative">
-            <div class="absolute inset-0 bg-pink-600 rounded-2xl blur-2xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+          <div class="bg-gray-900 border-4 border-yellow-400 p-4" style="box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.8);">
             <input 
               v-model="roomCode"
               type="text"
               required
               maxlength="6"
-              class="relative w-full px-6 py-6 rounded-2xl bg-gray-900/90 border-4 border-pink-500/50 focus:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-500/50 text-5xl text-center uppercase tracking-[0.3em] font-black transition-all placeholder-gray-700 hover:border-pink-500/70"
-              placeholder="ABC123"
+              class="w-full px-6 py-6 bg-black border-4 border-yellow-500 focus:border-yellow-300 focus:outline-none text-5xl text-center uppercase tracking-widest font-black transition-all placeholder-gray-700 score-display text-yellow-400"
+              placeholder="------"
               @input="roomCode = roomCode.toUpperCase()"
             />
           </div>
-          <p class="text-sm text-gray-400 mt-3 text-center font-bold">Enter the 6-character code</p>
+          <p class="text-xs text-gray-400 mt-4 text-center score-display">ENTER 6 CHARACTERS</p>
         </div>
 
+        <!-- Enter Button - Blue Arcade Style -->
         <button
           type="submit"
           :disabled="loading || roomCode.length !== 6"
-          class="group relative w-full bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 py-6 rounded-2xl font-black text-3xl hover:from-pink-500 hover:via-rose-400 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-pink-500/60 transform hover:scale-105 active:scale-95 overflow-hidden"
+          class="w-full bg-blue-500 border-4 border-blue-700 px-8 py-6 text-2xl hover:bg-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed score-display text-white btn-retro"
         >
-          <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-          <span class="relative flex items-center justify-center gap-3">
-            <span class="text-3xl group-hover:translate-x-2 transition-all duration-300">{{ loading ? '⏳' : '🚪' }}</span>
-            <span class="tracking-wider">{{ loading ? 'JOINING...' : 'JOIN ROOM' }}</span>
-          </span>
+          <span class="animate-blink">▶</span> {{ loading ? 'LOADING...' : 'ENTER GAME' }}
         </button>
 
         <router-link 
           to="/"
-          class="block text-center text-gray-400 hover:text-gray-200 transition-colors font-bold text-lg hover:scale-110 transform inline-block"
+          class="block text-center text-gray-400 hover:text-white transition-colors text-xs score-display"
         >
-          ← Back to Home
+          [PRESS ESC TO EXIT]
         </router-link>
       </form>
 
-      <div v-if="error" class="mt-6 p-4 bg-red-900/50 border-4 border-red-500/60 rounded-2xl backdrop-blur-sm animate-shake">
-        <p class="text-red-300 text-base text-center font-black flex items-center justify-center gap-2">
-          <span class="text-2xl">⚠️</span>
-          {{ error }}
+      <!-- Error Message - Red Arcade Alert -->
+      <div v-if="error" class="mt-6 bg-red-600 border-4 border-red-800 p-4 animate-pixel-pulse" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+        <p class="text-white text-xs text-center font-black score-display flex items-center justify-center gap-2">
+          <span class="text-xl">!</span>
+          {{ error.toUpperCase() }}
+          <span class="text-xl">!</span>
         </p>
       </div>
     </div>
