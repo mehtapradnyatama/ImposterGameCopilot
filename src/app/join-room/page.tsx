@@ -135,7 +135,7 @@ export default function JoinRoom() {
           </form>
 
           <div className="mt-8 text-center text-gray-400">
-            <p className="mb-2">Don't have a room code?</p>
+            <p className="mb-2">Don&apos;t have a room code?</p>
             <Link href="/create-room" className="text-blue-400 hover:text-blue-300">
               Create your own room →
             </Link>
