@@ -200,98 +200,101 @@
           </div>
 
           <!-- STAGE 4: Results Phase - GAME OVER Screen -->
-          <div v-if="room?.status === 'FINISHED'" class="bg-black border-8 border-red-500 p-6 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(239, 68, 68, 0.5);">
-            <div class="text-center mb-6">
-              <div class="text-red-500 text-xs mb-4 animate-blink score-display">
+          <div v-if="room?.status === 'FINISHED'" class="bg-black border-8 border-red-500 p-4 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(239, 68, 68, 0.5);">
+            <!-- HEADER: Game Over + Victory Banner -->
+            <div class="text-center mb-4">
+              <div class="text-red-500 text-xs mb-2 animate-blink score-display">
                 ███ GAME OVER ███
               </div>
-              <h2 class="text-5xl font-black mb-2 text-red-500 score-display animate-pixel-pulse">RESULTS</h2>
+              <div class="p-4 border-4 animate-pixel-pulse" :class="gameOutcome.includes('Win') ? 'bg-green-600 border-green-800' : 'bg-red-600 border-red-800'" :style="gameOutcome.includes('Win') ? 'box-shadow: 6px 6px 0 rgba(22, 163, 74, 0.8);' : 'box-shadow: 6px 6px 0 rgba(220, 38, 38, 0.8);'">
+                <p class="text-2xl font-black text-white score-display">
+                  {{ gameOutcome.toUpperCase() }}
+                </p>
+              </div>
             </div>
             
-            <!-- The Impostors -->
-            <div class="mb-6">
-              <div class="bg-red-900 border-4 border-red-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                <h3 class="text-base font-black text-white score-display text-center">■ THE IMPOSTOR(S) ■</h3>
-              </div>
+            <!-- TWO COLUMN GRID -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <!-- Left: Impostor + Normal Word -->
               <div class="space-y-3">
-                <div 
-                  v-for="impostor in impostors"
-                  :key="impostor.id"
-                  class="flex items-center gap-4 bg-red-600 border-4 border-red-800 p-4"
-                  style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);"
-                >
-                  <img :src="impostor.users.avatar_url" class="w-16 h-16 border-4 border-red-900" style="image-rendering: pixelated;" />
-                  <div class="flex-1">
-                    <p class="text-2xl font-black text-white score-display">{{ impostor.users.full_name.toUpperCase() }}</p>
-                    <p class="text-red-200 font-black text-xs score-display mt-1">IMPOSTOR</p>
-                    <p class="text-yellow-400 font-black text-lg score-display mt-1">{{ impostor.word.toUpperCase() }}</p>
+                <!-- The Impostors -->
+                <div>
+                  <div class="bg-red-900 border-4 border-red-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                    <h3 class="text-xs font-black text-white score-display text-center">■ IMPOSTOR(S) ■</h3>
+                  </div>
+                  <div class="space-y-2">
+                    <div 
+                      v-for="impostor in impostors"
+                      :key="impostor.id"
+                      class="flex items-center gap-2 bg-red-600 border-4 border-red-800 p-2"
+                      style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+                    >
+                      <img :src="impostor.users.avatar_url" class="w-10 h-10 border-2 border-red-900" style="image-rendering: pixelated;" />
+                      <div class="flex-1">
+                        <p class="text-sm font-black text-white score-display">{{ impostor.users.full_name.toUpperCase() }}</p>
+                        <p class="text-yellow-400 font-black text-xs score-display">{{ impostor.word.toUpperCase() }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Normal Players Word -->
+                <div>
+                  <div class="bg-green-900 border-4 border-green-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                    <h3 class="text-xs font-black text-white score-display text-center">■ NORMAL WORD ■</h3>
+                  </div>
+                  <div class="bg-green-600 border-4 border-green-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                    <p class="text-2xl font-black text-white score-display">
+                      {{ normalWord.toUpperCase() }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Vote Results -->
+              <div>
+                <div class="bg-yellow-900 border-4 border-yellow-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                  <h3 class="text-xs font-black text-white score-display text-center">■ VOTE RESULTS ■</h3>
+                </div>
+                <div class="space-y-2">
+                  <div 
+                    v-for="result in voteResults"
+                    :key="result.user_id"
+                    class="flex items-center gap-2 p-2 border-4 transition-all"
+                    :class="result.is_impostor ? 'bg-red-600 border-red-800' : 'bg-gray-800 border-gray-900'"
+                    :style="result.is_impostor ? 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);' : 'box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);'"
+                  >
+                    <img :src="result.avatar_url" class="w-10 h-10 border-2" :class="result.is_impostor ? 'border-red-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
+                    <span class="flex-1 font-black text-white score-display text-xs">
+                      {{ result.full_name.toUpperCase() }}
+                      <span v-if="result.is_impostor" class="text-red-300 ml-1 text-2xs">👹</span>
+                    </span>
+                    <span class="text-xl font-black text-white score-display">{{ result.votes }}</span>
+                    <span class="text-2xs text-gray-300 score-display">VOTE{{ result.votes !== 1 ? 'S' : '' }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Normal Players Word -->
-            <div class="mb-6">
-              <div class="bg-green-900 border-4 border-green-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                <h3 class="text-base font-black text-white score-display text-center">■ NORMAL PLAYERS HAD ■</h3>
-              </div>
-              <div class="bg-green-600 border-4 border-green-800 p-6 text-center" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
-                <p class="text-5xl font-black text-white score-display">
-                  {{ normalWord.toUpperCase() }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Vote Results -->
-            <div class="mb-6">
-              <div class="bg-yellow-900 border-4 border-yellow-700 p-3 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                <h3 class="text-base font-black text-white score-display text-center">■ VOTE RESULTS ■</h3>
-              </div>
-              <div class="space-y-2">
-                <div 
-                  v-for="result in voteResults"
-                  :key="result.user_id"
-                  class="flex items-center gap-3 p-3 border-4 transition-all"
-                  :class="result.is_impostor ? 'bg-red-600 border-red-800' : 'bg-gray-800 border-gray-900'"
-                  :style="result.is_impostor ? 'box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
-                >
-                  <img :src="result.avatar_url" class="w-12 h-12 border-4" :class="result.is_impostor ? 'border-red-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
-                  <span class="flex-1 font-black text-white score-display text-sm">
-                    {{ result.full_name.toUpperCase() }}
-                    <span v-if="result.is_impostor" class="text-red-300 ml-2 text-xs">IMPOSTOR</span>
-                  </span>
-                  <span class="text-3xl font-black text-white score-display">{{ result.votes }}</span>
-                  <span class="text-xs text-gray-300 score-display">VOTE{{ result.votes !== 1 ? 'S' : '' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Victory/Defeat Banner -->
-            <div class="text-center mb-6 p-8 border-8 animate-pixel-pulse" :class="gameOutcome.includes('Win') ? 'bg-green-600 border-green-800' : 'bg-red-600 border-red-800'" :style="gameOutcome.includes('Win') ? 'box-shadow: 8px 8px 0 rgba(22, 163, 74, 0.8);' : 'box-shadow: 8px 8px 0 rgba(220, 38, 38, 0.8);'">
-              <p class="text-4xl font-black text-white score-display">
-                {{ gameOutcome.toUpperCase() }}
-              </p>
-            </div>
-
             <!-- Final Scoreboard -->
-            <div class="mb-6">
-              <div class="bg-purple-900 border-4 border-purple-700 p-3 mb-4" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                <h3 class="text-2xl font-black text-white score-display text-center">■ FINAL SCOREBOARD ■</h3>
+            <div class="mb-3">
+              <div class="bg-purple-900 border-4 border-purple-700 p-2 mb-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+                <h3 class="text-sm font-black text-white score-display text-center">■ FINAL SCOREBOARD ■</h3>
               </div>
               <div class="space-y-2">
                 <div 
                   v-for="(participant, index) in sortedParticipants"
                   :key="participant.id"
-                  class="flex items-center gap-4 p-4 border-4 transition-all"
+                  class="flex items-center gap-2 p-2 border-4 transition-all"
                   :class="index === 0 ? 'bg-yellow-500 border-yellow-700' : index === 1 ? 'bg-gray-500 border-gray-700' : index === 2 ? 'bg-orange-600 border-orange-800' : 'bg-gray-800 border-gray-900'"
-                  :style="index === 0 ? 'box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
+                  :style="index === 0 ? 'box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.8);'"
                 >
-                  <div class="w-10 h-10 flex items-center justify-center font-black text-2xl score-display" :class="index === 0 ? 'bg-yellow-700 text-black border-4 border-yellow-900' : index === 1 ? 'bg-gray-700 text-white border-4 border-gray-900' : index === 2 ? 'bg-orange-800 text-white border-4 border-orange-900' : 'bg-gray-900 text-gray-400 border-4 border-black'">
+                  <div class="w-8 h-8 flex items-center justify-center font-black text-lg score-display" :class="index === 0 ? 'bg-yellow-700 text-black border-2 border-yellow-900' : index === 1 ? 'bg-gray-700 text-white border-2 border-gray-900' : index === 2 ? 'bg-orange-800 text-white border-2 border-orange-900' : 'bg-gray-900 text-gray-400 border-2 border-black'">
                     {{ index + 1 }}
                   </div>
-                  <img :src="participant.users.avatar_url" class="w-12 h-12 border-4" :class="index === 0 ? 'border-yellow-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
-                  <span class="flex-1 text-left font-black text-base score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
-                  <span class="text-3xl font-black score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.score }}</span>
+                  <img :src="participant.users.avatar_url" class="w-10 h-10 border-2" :class="index === 0 ? 'border-yellow-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
+                  <span class="flex-1 text-left font-black text-sm score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
+                  <span class="text-2xl font-black score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.score }}</span>
                   <span class="text-xs score-display" :class="index === 0 ? 'text-gray-800' : 'text-gray-400'">PTS</span>
                 </div>
               </div>
@@ -300,10 +303,10 @@
             <!-- Return Home Button -->
             <button 
               @click="returnHome"
-              class="w-full bg-purple-600 border-4 border-purple-800 px-8 py-6 text-2xl hover:bg-purple-500 transition-all score-display text-white btn-retro"
+              class="w-full bg-purple-600 border-4 border-purple-800 px-6 py-4 text-xl hover:bg-purple-500 transition-all score-display text-white btn-retro"
             >
-              <span class="flex items-center justify-center gap-3">
-                <span class="text-3xl">◀</span>
+              <span class="flex items-center justify-center gap-2">
+                <span class="text-2xl">◀</span>
                 <span>BACK TO HOME</span>
               </span>
             </button>
@@ -887,6 +890,15 @@ const submitVote = async (votedUserId) => {
     console.log('✅ Vote submitted successfully:', data);
     myVote.value = votedUserId
     hasVoted.value = true
+    
+    // Immediately update vote count
+    await loadVoteCount()
+    
+    // Check if all players voted (host triggers finish)
+    if (isHost.value) {
+      await checkAllVoted()
+    }
+    
     console.groupEnd();
   } catch (error) {
     console.error('💥 CATCH ERROR:', {
@@ -928,7 +940,7 @@ const finishGame = async () => {
     // Get all votes
     const { data: votes } = await supabase
       .from('votes')
-      .select('voted_for_id')
+      .select('*')
       .eq('room_id', room.value.id)
     
     // Count votes
@@ -945,33 +957,45 @@ const finishGame = async () => {
     const mostVoted = participants.value.find(p => p.user_id === mostVotedId)
     const impostorsCaught = mostVoted?.is_imposter || false
     
-    // Update scores
+    // Update scores - NEW LOGIC
     for (const participant of participants.value) {
-      let score = 0
+      let scoreToAdd = 0
       
-      // Check if they voted correctly
+      // Find their vote
       const theirVote = votes.find(v => v.voter_id === participant.user_id)
       const votedForImpostor = participants.value.find(p => p.user_id === theirVote?.voted_for_id)?.is_imposter
       
       if (participant.is_imposter) {
-        // Impostor scoring
+        // IMPOSTOR SCORING
         if (!impostorsCaught) {
-          score = 15 // Impostors survived
+          // Impostor survived -> WIN
+          scoreToAdd = 20
+        } else {
+          // Impostor caught -> LOSE
+          scoreToAdd = 0
         }
       } else {
-        // Normal player scoring
-        if (votedForImpostor) {
-          score = 10 // Voted for impostor correctly
+        // CITIZEN SCORING
+        if (impostorsCaught) {
+          // Citizens won (impostor caught)
+          if (votedForImpostor) {
+            scoreToAdd = 15 // Voted correctly for impostor
+          } else {
+            scoreToAdd = 5 // Impostor caught but they voted wrong
+          }
+        } else {
+          // Citizens lost (impostor survived)
+          if (votedForImpostor) {
+            scoreToAdd = 5 // Tried to vote impostor but wrong person got most votes
+          } else {
+            scoreToAdd = 0 // Voted wrong and lost
+          }
         }
-      }
-      
-      if (impostorsCaught && participant.user_id === mostVotedId) {
-        score += 5 // Bonus for being the caught impostor (? maybe remove)
       }
       
       await supabase
         .from('room_participants')
-        .update({ score: participant.score + score })
+        .update({ score: (participant.score || 0) + scoreToAdd })
         .eq('id', participant.id)
     }
     
