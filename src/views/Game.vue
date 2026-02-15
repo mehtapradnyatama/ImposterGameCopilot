@@ -661,21 +661,18 @@ const startVoting = async () => {
   console.group('🎯 START VOTING DEBUG');
   
   try {
-    votingStartTime.value = new Date().toISOString()
-    
     console.log('1. Current user:', currentUser.value?.id);
     console.log('2. Room host:', room.value.host_id);
     console.log('3. Is host:', isHost.value);
     console.log('4. Room ID:', room.value.id);
     console.log('5. New status: VOTING');
-    console.log('6. Voting start time:', votingStartTime.value);
     
     // Check auth
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('7. Session exists:', session ? 'YES' : 'NO');
-    console.log('8. Session user ID:', session?.user?.id);
+    console.log('6. Session exists:', session ? 'YES' : 'NO');
+    console.log('7. Session user ID:', session?.user?.id);
     
-    console.log('9. Attempting UPDATE rooms...');
+    console.log('8. Attempting UPDATE rooms...');
     const { data, error } = await supabase
       .from('rooms')
       .update({ status: 'VOTING' })
