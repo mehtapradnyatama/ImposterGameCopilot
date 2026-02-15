@@ -16,40 +16,14 @@
           </div>
         </div>
         
-        <!-- Timer - Arcade Style -->
-        <div v-if="timeLeft > 0 && room?.status !== 'FINISHED'" class="mt-4">
-          <div class="flex justify-between text-xs mb-2">
-            <span class="font-black text-white score-display">■ TIME REMAINING</span>
-            <span class="font-black text-3xl score-display" :class="timeLeft < 30 ? 'text-red-400' : 'text-cyan-400'">{{ Math.floor(timeLeft / 60) }}:{{ String(timeLeft % 60).padStart(2, '0') }}</span>
-          </div>
-          <div class="w-full bg-gray-800 border-4 border-gray-900 h-6 relative" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
-            <div 
-              class="h-full transition-all duration-500" 
-              :class="timeLeft < 30 ? 'bg-red-500' : 'bg-cyan-400'"
-              :style="{ width: timePercentage + '%' }"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Host Controls - Arcade Buttons -->
-        <div v-if="isHost && room?.status === 'IN_PROGRESS'" class="mt-4 flex gap-3">
-          <button 
-            @click="extendTime"
-            :disabled="extendCount >= 2"
-            class="flex-1 bg-blue-600 border-4 border-blue-800 px-4 py-3 hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black score-display text-white"
-            style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
-          >
-            <span class="flex items-center justify-center gap-2">
-              <span class="text-base">▲</span>
-              <span>+30S EXTEND ({{ extendCount }}/2)</span>
-            </span>
-          </button>
+        <!-- Host Controls - Start Voting Button -->
+        <div v-if="isHost && room?.status === 'IN_PROGRESS'" class="mt-4">
           <button 
             @click="startVoting"
-            class="flex-1 bg-yellow-500 border-4 border-yellow-700 px-4 py-3 hover:bg-yellow-400 transition-all text-xs font-black score-display text-black"
-            style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+            class="w-full bg-yellow-500 border-4 border-yellow-700 px-6 py-4 hover:bg-yellow-400 transition-all text-lg font-black score-display text-black"
+            style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);"
           >
-            START VOTING NOW
+            ▶ START VOTING NOW
           </button>
         </div>
       </div>
@@ -60,35 +34,28 @@
           <!-- Current Speaker & Your Word Display -->
           <div class="relative bg-black border-8 p-8 text-center border-yellow-400" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
             <div>
-              <!-- Current Speaker Display -->
-              <div v-if="room?.status === 'IN_PROGRESS' && currentSpeaker" class="mb-6">
-                <p class="text-xs font-black mb-3 score-display uppercase text-yellow-400">■ NOW SPEAKING ■</p>
-                <div class="flex items-center justify-center gap-4 bg-yellow-600 border-4 border-yellow-800 p-5 mb-3" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-                  <img :src="currentSpeaker.users.avatar_url" class="w-16 h-16 border-4 border-yellow-900" style="image-rendering: pixelated;" />
-                  <p class="text-3xl font-black score-display text-white">
-                    {{ currentSpeaker.users.full_name.toUpperCase() }}
-                  </p>
-                </div>
+              <!-- Speaking Order Display -->
+              <div v-if="room?.status === 'IN_PROGRESS' && speakerOrder.length > 0" class="mb-6">
+                <p class="text-xs font-black mb-4 score-display uppercase text-yellow-400">■ SPEAKING ORDER ■</p>
+                <p class="text-gray-400 text-xs mb-4 score-display">COORDINATE VIA VOICE/LIVE CHAT. HOST STARTS VOTING WHEN READY.</p>
                 
-                <!-- Timer for current speaker -->
-                <div class="bg-gray-900 border-4 border-yellow-600 p-4">
-                  <p class="text-yellow-400 text-xs mb-2 score-display">TIME LEFT FOR THIS PLAYER</p>
-                  <p class="text-4xl font-black score-display text-yellow-400">{{ speakTimeLeft }}S</p>
-                </div>
-                
-                <!-- Next button (only for current speaker) -->
-                <div v-if="isMyTurn" class="mt-4">
-                  <button 
-                    @click="nextSpeaker"
-                    class="bg-green-600 border-4 border-green-800 px-8 py-4 hover:bg-green-500 transition-all text-lg font-black score-display text-white"
-                    style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div 
+                    v-for="(speaker, index) in speakerOrder" 
+                    :key="speaker.user_id"
+                    class="bg-gray-900 border-4 p-3"
+                    :class="speaker.user_id === currentUser?.id ? 'border-cyan-400' : 'border-gray-700'"
+                    :style="speaker.user_id === currentUser?.id ? 'box-shadow: 4px 4px 0 rgba(34, 211, 238, 0.6);' : 'box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);'"
                   >
-                    ✅ I'M DONE
-                  </button>
-                </div>
-                
-                <div v-else class="mt-4 bg-gray-800 border-4 border-gray-900 p-3">
-                  <p class="text-gray-400 text-xs score-display">WAIT FOR {{ currentSpeaker.users.full_name.toUpperCase() }} TO FINISH</p>
+                    <div class="text-2xl font-black score-display mb-2" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-500'">
+                      {{ index + 1 }}
+                    </div>
+                    <img :src="speaker.users.avatar_url" class="w-12 h-12 mx-auto border-2 mb-2" :class="speaker.user_id === currentUser?.id ? 'border-cyan-400' : 'border-gray-600'" style="image-rendering: pixelated;" />
+                    <p class="text-xs font-black score-display" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-400'">
+                      {{ speaker.users.full_name.toUpperCase() }}
+                    </p>
+                    <p v-if="speaker.user_id === currentUser?.id" class="text-xs score-display text-cyan-400 mt-1">(YOU)</p>
+                  </div>
                 </div>
               </div>
               
@@ -385,19 +352,14 @@ const myWord = ref('')
 const isImposter = ref(false)
 const myVote = ref(null)
 const hasVoted = ref(false)
-const timeLeft = ref(0)
+const timeLeft = ref(0) // For voting timer only
 const newMessage = ref('')
 const voteResults = ref([])
-const extendCount = ref(0)
 const voteCount = ref(0)
-const gameStartTime = ref(null)
 const votingStartTime = ref(null)
 
-// Turn-based speaking system
+// Speaking order (for display only, no enforcement)
 const speakerOrder = ref([]) // Randomized order of participants
-const currentSpeakerIndex = ref(0)
-const speakTimeLeft = ref(0)
-const isAutoAdvancing = ref(false) // Prevent duplicate auto-advance calls
 
 // Voice chat
 const isVoiceConnected = ref(false)
@@ -432,31 +394,6 @@ const mostVotedPlayerWord = computed(() => {
   const mostVoted = voteResults.value[0]
   const player = participants.value.find(p => p.user_id === mostVoted.user_id)
   return player?.word || ''
-})
-
-const currentSpeaker = computed(() => {
-  if (!speakerOrder.value.length || currentSpeakerIndex.value >= speakerOrder.value.length) {
-    return null
-  }
-  return speakerOrder.value[currentSpeakerIndex.value]
-})
-
-const isMyTurn = computed(() => {
-  const isTurn = currentSpeaker.value?.user_id === currentUser.value?.id
-  
-  // Debug logging
-  if (room.value?.status === 'IN_PROGRESS') {
-    console.log('🤔 isMyTurn check:', {
-      result: isTurn,
-      currentSpeakerUserId: currentSpeaker.value?.user_id,
-      currentSpeakerName: currentSpeaker.value?.users?.full_name,
-      myUserId: currentUser.value?.id,
-      currentSpeakerIndex: currentSpeakerIndex.value,
-      totalSpeakers: speakerOrder.value.length
-    });
-  }
-  
-  return isTurn
 })
 
 const phaseText = computed(() => {
@@ -507,14 +444,6 @@ const phaseBoxShadow = computed(() => {
     'FINISHED': 'box-shadow: 4px 4px 0 rgba(22, 163, 74, 0.8);'
   }
   return shadows[room.value.status] || 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'
-})
-
-const timePercentage = computed(() => {
-  if (!room.value) return 100
-  const maxTime = room.value.status === 'IN_PROGRESS' 
-    ? room.value.discussion_time + (extendCount.value * 30)
-    : room.value.voting_time
-  return (timeLeft.value / maxTime) * 100
 })
 
 const sortedParticipants = computed(() => {
@@ -580,12 +509,6 @@ const loadGameData = async () => {
     
     console.log('✅ Room loaded:', roomData);
     room.value = roomData
-    gameStartTime.value = roomData.game_start_time || roomData.created_at
-    
-    // Load current speaker index from database
-    if (roomData.current_speaker_index !== undefined) {
-      currentSpeakerIndex.value = roomData.current_speaker_index
-    }
     
     console.log('2. Loading participants for room:', roomData.id);
     
@@ -603,7 +526,7 @@ const loadGameData = async () => {
     console.log('✅ Participants loaded:', participantsData);
     participants.value = participantsData || []
     
-    // Load speaker order from database (synchronized across all clients)
+    // Load speaker order from database (for display only)
     if (roomData.speaker_order && Array.isArray(roomData.speaker_order)) {
       speakerOrder.value = roomData.speaker_order
         .map(userId => participants.value.find(p => p.user_id === userId))
@@ -613,19 +536,9 @@ const loadGameData = async () => {
         order: speakerOrder.value.map(p => p.users?.full_name)
       });
     } else {
-      // Fallback: empty speaker order (should not happen after migration)
+      // Fallback: empty speaker order
       speakerOrder.value = []
       console.warn('⚠️ No speaker order in database!');
-    }
-    
-    // Load current speaker index from database (IMPORTANT: do this AFTER speaker order)
-    if (roomData.current_speaker_index !== undefined) {
-      currentSpeakerIndex.value = roomData.current_speaker_index
-      console.log('🎯 Current speaker index from DB:', currentSpeakerIndex.value);
-      console.log('🎯 Current speaker:', speakerOrder.value[currentSpeakerIndex.value]?.users?.full_name);
-    } else {
-      currentSpeakerIndex.value = 0
-      console.log('🎯 Current speaker index defaulted to 0');
     }
     
     // Get my data
@@ -635,8 +548,7 @@ const loadGameData = async () => {
       myWord.value = me.word || ''
       console.log('👤 My user data:', {
         userId: currentUser.value.id,
-        username: me.users?.full_name,
-        isMyTurn: currentSpeaker.value?.user_id === currentUser.value?.id
+        username: me.users?.full_name
       });
     }
     
@@ -678,48 +590,16 @@ const subscribeToUpdates = () => {
       table: 'rooms',
       filter: `id=eq.${room.value.id}`
     }, async (payload) => {
-      console.group('🔔 REALTIME: Room Updated');
-      console.log('Old speaker index:', currentSpeakerIndex.value);
-      console.log('New speaker index:', payload.new.current_speaker_index);
-      console.log('Room status:', payload.new.status);
-      
+      console.log('🔔 Room Updated');
       room.value = payload.new
       
-      // Update speaker order when room updates
+      // Update speaker order when room updates (for display only)
       if (payload.new.speaker_order && Array.isArray(payload.new.speaker_order)) {
         console.log('📋 Speaker order updated:', payload.new.speaker_order);
         speakerOrder.value = payload.new.speaker_order
           .map(userId => participants.value.find(p => p.user_id === userId))
           .filter(p => p)
       }
-      
-      // DIRECT speaker index update from database (like voting system)
-      if (payload.new.current_speaker_index !== undefined && payload.new.current_speaker_index !== currentSpeakerIndex.value) {
-        console.log('⚡ Speaker index changed! Updating to:', payload.new.current_speaker_index);
-        currentSpeakerIndex.value = payload.new.current_speaker_index
-        
-        // Reset auto-advance flag when speaker changes
-        isAutoAdvancing.value = false
-        
-        console.log('🎯 NOW SPEAKING:', currentSpeaker.value?.users?.full_name);
-        console.log('👤 My user ID:', currentUser.value?.id);
-        console.log('👤 Current speaker user ID:', currentSpeaker.value?.user_id);
-        console.log('✅ Is my turn?', isMyTurn.value);
-        
-        // Reset game start time so timer starts fresh for new speaker
-        const newStartTime = new Date(Date.now() - (currentSpeakerIndex.value * room.value.discussion_time * 1000))
-        gameStartTime.value = newStartTime.toISOString()
-        
-        // Immediately update timers to show full countdown for new speaker
-        updateTimers()
-      }
-      
-      // Update game start time if exists (from initial load)
-      if (payload.new.game_start_time && !gameStartTime.value) {
-        gameStartTime.value = payload.new.game_start_time
-      }
-      
-      console.groupEnd();
       
       if (payload.new.status === 'VOTING') {
         votingStartTime.value = new Date().toISOString()
@@ -782,64 +662,12 @@ const subscribeToUpdates = () => {
 }
 
 // Helper function to calculate time left for current speaker
-const updateTimers = () => {
-  if (!gameStartTime.value || !room.value || room.value.status !== 'IN_PROGRESS') return
-  
-  const startTime = new Date(gameStartTime.value)
-  const elapsed = Math.floor((Date.now() - startTime) / 1000)
-  const timePerPlayer = room.value.discussion_time
-  
-  // Calculate time elapsed for current speaker only
-  const elapsedForCurrentSpeaker = elapsed - (currentSpeakerIndex.value * timePerPlayer) - (extendCount.value * 30)
-  speakTimeLeft.value = Math.max(0, timePerPlayer - elapsedForCurrentSpeaker)
-  
-  // Calculate overall time left
-  const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
-  timeLeft.value = Math.max(0, maxTime - elapsed)
-  
-  // Auto-advance logic (host only) with duplicate prevention
-  if (speakTimeLeft.value === 0 && isHost.value && !isAutoAdvancing.value) {
-    // If not the last speaker, advance to next
-    if (currentSpeakerIndex.value < speakerOrder.value.length - 1) {
-      isAutoAdvancing.value = true // Set flag to prevent duplicate calls
-      const nextIndex = currentSpeakerIndex.value + 1
-      console.log(`⏰ Time's up! Auto-advancing to speaker ${nextIndex}`)
-      
-      supabase
-        .from('rooms')
-        .update({ current_speaker_index: nextIndex })
-        .eq('id', room.value.id)
-        .then(({ error }) => {
-          if (error) {
-            console.error('Error auto-advancing speaker:', error)
-            isAutoAdvancing.value = false // Reset flag on error
-          }
-        })
-    } 
-    // If last speaker, start voting
-    else if (currentSpeakerIndex.value === speakerOrder.value.length - 1) {
-      isAutoAdvancing.value = true // Set flag to prevent duplicate calls
-      console.log(`⏰ Last speaker's time is up! Starting voting...`)
-      startVoting()
-    }
-  }
-}
-
 const startTimer = () => {
   timerInterval = setInterval(() => {
-    if (!room.value || !gameStartTime.value) return
+    if (!room.value) return
     
-    if (room.value.status === 'IN_PROGRESS') {
-      // Update timers (countdown only, speaker index from database)
-      updateTimers()
-      
-      // Check if all speakers finished (only trigger if index is beyond the last speaker)
-      // This happens when:
-      // 1. Last speaker clicks "I'M DONE" (index stays at length-1)
-      // 2. Timer runs out for last speaker (auto-advance in updateTimers handles this)
-      // Only HOST can trigger voting via manual button
-      // Note: Auto-voting is now handled in updateTimers() when timer = 0 for last speaker
-    } else if (room.value.status === 'VOTING' && votingStartTime.value) {
+    // Only handle voting timer now
+    if (room.value.status === 'VOTING' && votingStartTime.value) {
       const startTime = new Date(votingStartTime.value)
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       timeLeft.value = Math.max(0, room.value.voting_time - elapsed)
@@ -849,58 +677,6 @@ const startTimer = () => {
       }
     }
   }, 1000)
-}
-
-const extendTime = async () => {
-  if (extendCount.value >= 2 || !isHost.value) return
-  
-  extendCount.value++
-  // Extend time is handled by client-side calculation
-  alert('Time extended by 30 seconds!')
-}
-
-const nextSpeaker = async () => {
-  if (!isMyTurn.value) return
-  
-  try {
-    console.group('⏭️ NEXT SPEAKER');
-    console.log('Current speaker index:', currentSpeakerIndex.value);
-    console.log('Current speaker:', currentSpeaker.value?.users?.full_name);
-    console.log('Total speakers:', speakerOrder.value.length);
-    
-    // If this is the last speaker, just mark as done (don't increment)
-    // Host will trigger voting when they see all speakers are done
-    if (currentSpeakerIndex.value >= speakerOrder.value.length - 1) {
-      console.log('✅ Last speaker finished! Waiting for host to start voting...');
-      console.groupEnd();
-      return
-    }
-    
-    // Move to next speaker index
-    const targetIndex = currentSpeakerIndex.value + 1
-    
-    console.log('Target index:', targetIndex);
-    console.log('Updating database...');
-    
-    // Update speaker index in database so all clients sync instantly
-    const { data, error } = await supabase
-      .from('rooms')
-      .update({ current_speaker_index: targetIndex })
-      .eq('id', room.value.id)
-      .select()
-    
-    if (error) {
-      console.error('❌ Database update failed:', error);
-      throw error;
-    }
-    
-    console.log('✅ Database updated successfully:', data);
-    console.log('🔄 All clients will sync via Realtime subscription');
-    console.groupEnd();
-  } catch (error) {
-    console.error('Error skipping speaker:', error)
-    console.groupEnd();
-  }
 }
 
 const startVoting = async () => {
