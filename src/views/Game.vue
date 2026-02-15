@@ -793,6 +793,31 @@ const submitVote = async (votedUserId) => {
 
     if (error) {
       console.error('❌ Vote operation failed:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw error;
+    }
+    
+    const wasChange = hasVoted.value;
+    console.log(wasChange ? '🔄 Vote changed successfully:' : '✅ Vote submitted successfully:', data);
+    sfx.vote() // Play vote sound
+    myVote.value = votedUserId
+    hasVoted.value = true
+    
+    // Immediately update vote count
+    await loadVoteCount()
+    
+    // Check if all players voted (all clients call this, but only host executes)
+    await checkAllVoted()
+    
+    console.groupEnd();
+  } catch (error) {
+    console.error('💥 CATCH ERROR:', {
+      name: error.name,
+      message: error.message,
       stack: error.stack
     });
     sfx.error() // Play error sound
