@@ -232,12 +232,12 @@
                     :style="result.is_impostor ? 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);' : 'box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);'"
                   >
                     <img :src="result.avatar_url" class="w-10 h-10 border-2" :class="result.is_impostor ? 'border-red-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
-                    <span class="flex-1 font-black text-white score-display text-xs">
+                    <span class="flex-1 font-black text-white score-display text-xs min-w-0 break-words">
                       {{ result.full_name.toUpperCase() }}
                       <span v-if="result.is_impostor" class="text-red-300 ml-1 text-2xs">👹</span>
                     </span>
-                    <span class="text-xl font-black text-white score-display">{{ result.votes }}</span>
-                    <span class="text-2xs text-gray-300 score-display">VOTE{{ result.votes !== 1 ? 'S' : '' }}</span>
+                    <span class="text-xl font-black text-white score-display flex-shrink-0">{{ result.votes }}</span>
+                    <span class="text-2xs text-gray-300 score-display flex-shrink-0">VOTE{{ result.votes !== 1 ? 'S' : '' }}</span>
                   </div>
                 </div>
               </div>
@@ -260,9 +260,9 @@
                     {{ index + 1 }}
                   </div>
                   <img :src="participant.users.avatar_url" class="w-10 h-10 border-2" :class="index === 0 ? 'border-yellow-900' : 'border-gray-700'" style="image-rendering: pixelated;" />
-                  <span class="flex-1 text-left font-black text-sm score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
-                  <span class="text-2xl font-black score-display" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.score }}</span>
-                  <span class="text-xs score-display" :class="index === 0 ? 'text-gray-800' : 'text-gray-400'">PTS</span>
+                  <span class="flex-1 text-left font-black text-sm score-display min-w-0 break-words" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
+                  <span class="text-2xl font-black score-display flex-shrink-0" :class="index === 0 ? 'text-black' : 'text-white'">{{ participant.score }}</span>
+                  <span class="text-xs score-display flex-shrink-0" :class="index === 0 ? 'text-gray-800' : 'text-gray-400'">PTS</span>
                 </div>
               </div>
             </div>
@@ -293,8 +293,8 @@
                 style="box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);"
               >
                 <img :src="participant.users.avatar_url" class="w-9 h-9 border-2 border-purple-500" style="image-rendering: pixelated;" />
-                <span class="text-xs flex-1 font-black text-white score-display">{{ participant.users.full_name.toUpperCase() }}</span>
-                <span class="text-xs font-black px-2 py-1 bg-purple-600 border-2 border-purple-800 text-white score-display">{{ participant.score }}</span>
+                <span class="text-xs flex-1 font-black text-white score-display min-w-0 break-words">{{ participant.users.full_name.toUpperCase() }}</span>
+                <span class="text-xs font-black px-2 py-1 bg-purple-600 border-2 border-purple-800 text-white score-display flex-shrink-0">{{ participant.score }}</span>
               </div>
             </div>
           </div>
@@ -339,6 +339,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { sfx } from '@/composables/useAudio'
 
 const route = useRoute()
 const router = useRouter()
@@ -597,9 +598,11 @@ const subscribeToUpdates = () => {
       }
       
       if (payload.new.status === 'VOTING') {
+        sfx.gameStart() // Play game-start sound when voting begins
         hasVoted.value = false
         myVote.value = null
       } else if (payload.new.status === 'FINISHED') {
+        sfx.gameOver() // Play game-over sound when game finishes
         await loadVoteResults()
       }
     })
@@ -699,13 +702,16 @@ const startVoting = async () => {
         hint: error.hint,
         code: error.code
       });
+      sfx.error() // Play error sound
       throw error;
     }
     
     console.log('✅ Room updated successfully:', data);
+    sfx.success() // Play success sound when voting starts
     console.groupEnd();
   } catch (error) {
     console.error('💥 START VOTING ERROR:', error);
+    sfx.error() // Play error sound
     console.groupEnd();
     alert('Error starting voting: ' + error.message)
   }
@@ -814,6 +820,7 @@ const submitVote = async (votedUserId) => {
     }
     
     console.log('✅ Vote submitted successfully:', data);
+    sfx.vote() // Play vote sound on successful submission
     myVote.value = votedUserId
     hasVoted.value = true
     
@@ -830,6 +837,7 @@ const submitVote = async (votedUserId) => {
       message: error.message,
       stack: error.stack
     });
+    sfx.error() // Play error sound
     console.groupEnd();
     alert('Error submitting vote: ' + (error.message || error.hint || 'Unknown error. Check console.'))
   }
