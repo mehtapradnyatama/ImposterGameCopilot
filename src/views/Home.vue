@@ -1,16 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center p-4 pixel-grid">
     
-    <!-- BGM Toggle Button (Fixed Top-Right) -->
-    <button 
-      @click="toggleBGM"
-      class="fixed top-4 right-4 z-50 bg-black border-4 px-4 py-2 transition-all hover:scale-110 score-display text-sm"
-      :class="isBgmPlaying ? 'border-green-400 text-green-400' : 'border-gray-600 text-gray-600'"
-      style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
-    >
-      {{ isBgmPlaying ? '🔊 BGM ON' : '🔇 BGM OFF' }}
-    </button>
-    
     <div class="max-w-4xl w-full text-center space-y-8">
       
       <!-- Arcade Title Screen -->
@@ -135,13 +125,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
-import { useAudio, sfx } from '@/composables/useAudio'
+import { sfx } from '@/composables/useAudio'
 
 const user = ref(null)
 const loading = ref(false)
-
-// Audio controls
-const { playBGM, toggleBGM, isBgmPlaying, setBGMVolume } = useAudio()
 
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
@@ -160,9 +147,6 @@ onMounted(async () => {
     })
   }
   user.value = session?.user || null
-  
-  // Start BGM (Note: might not work until user clicks due to browser autoplay policy)
-  setTimeout(() => playBGM('game-bgm'), 500)
 })
 
 const signInWithGoogle = async () => {
