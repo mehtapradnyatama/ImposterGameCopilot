@@ -397,6 +397,7 @@ const votingStartTime = ref(null)
 const speakerOrder = ref([]) // Randomized order of participants
 const currentSpeakerIndex = ref(0)
 const speakTimeLeft = ref(0)
+const isAutoAdvancing = ref(false) // Prevent duplicate auto-advance calls
 
 // Voice chat
 const isVoiceConnected = ref(false)
@@ -441,7 +442,21 @@ const currentSpeaker = computed(() => {
 })
 
 const isMyTurn = computed(() => {
-  return currentSpeaker.value?.user_id === currentUser.value?.id
+  const isTurn = currentSpeaker.value?.user_id === currentUser.value?.id
+  
+  // Debug logging
+  if (room.value?.status === 'IN_PROGRESS') {
+    console.log('🤔 isMyTurn check:', {
+      result: isTurn,
+      currentSpeakerUserId: currentSpeaker.value?.user_id,
+      currentSpeakerName: currentSpeaker.value?.users?.full_name,
+      myUserId: currentUser.value?.id,
+      currentSpeakerIndex: currentSpeakerIndex.value,
+      totalSpeakers: speakerOrder.value.length
+    });
+  }
+  
+  return isTurn
 })
 
 const phaseText = computed(() => {
@@ -682,7 +697,14 @@ const subscribeToUpdates = () => {
       if (payload.new.current_speaker_index !== undefined && payload.new.current_speaker_index !== currentSpeakerIndex.value) {
         console.log('⚡ Speaker index changed! Updating to:', payload.new.current_speaker_index);
         currentSpeakerIndex.value = payload.new.current_speaker_index
+        
+        // Reset auto-advance flag when speaker changes
+        isAutoAdvancing.value = false
+        
         console.log('🎯 NOW SPEAKING:', currentSpeaker.value?.users?.full_name);
+        console.log('👤 My user ID:', currentUser.value?.id);
+        console.log('👤 Current speaker user ID:', currentSpeaker.value?.user_id);
+        console.log('✅ Is my turn?', isMyTurn.value);
         
         // Reset game start time so timer starts fresh for new speaker
         const newStartTime = new Date(Date.now() - (currentSpeakerIndex.value * room.value.discussion_time * 1000))
@@ -775,10 +797,11 @@ const updateTimers = () => {
   const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
   timeLeft.value = Math.max(0, maxTime - elapsed)
   
-  // Auto-advance logic (host only)
-  if (speakTimeLeft.value === 0 && isHost.value) {
+  // Auto-advance logic (host only) with duplicate prevention
+  if (speakTimeLeft.value === 0 && isHost.value && !isAutoAdvancing.value) {
     // If not the last speaker, advance to next
     if (currentSpeakerIndex.value < speakerOrder.value.length - 1) {
+      isAutoAdvancing.value = true // Set flag to prevent duplicate calls
       const nextIndex = currentSpeakerIndex.value + 1
       console.log(`⏰ Time's up! Auto-advancing to speaker ${nextIndex}`)
       
@@ -787,11 +810,15 @@ const updateTimers = () => {
         .update({ current_speaker_index: nextIndex })
         .eq('id', room.value.id)
         .then(({ error }) => {
-          if (error) console.error('Error auto-advancing speaker:', error)
+          if (error) {
+            console.error('Error auto-advancing speaker:', error)
+            isAutoAdvancing.value = false // Reset flag on error
+          }
         })
     } 
     // If last speaker, start voting
     else if (currentSpeakerIndex.value === speakerOrder.value.length - 1) {
+      isAutoAdvancing.value = true // Set flag to prevent duplicate calls
       console.log(`⏰ Last speaker's time is up! Starting voting...`)
       startVoting()
     }
@@ -809,15 +836,9 @@ const startTimer = () => {
       // Check if all speakers finished (only trigger if index is beyond the last speaker)
       // This happens when:
       // 1. Last speaker clicks "I'M DONE" (index stays at length-1)
-      // 2. Timer runs out for last speaker (auto-advance would have moved to length)
-      // Only HOST can trigger voting
-      if (currentSpeakerIndex.value >= speakerOrder.value.length - 1 && isHost.value) {
-        // Check if last speaker's time is up or if they clicked done
-        if (speakTimeLeft.value === 0 || currentSpeakerIndex.value === speakerOrder.value.length) {
-          console.log('✅ All speakers finished! Starting voting...');
-          startVoting()
-        }
-      }
+      // 2. Timer runs out for last speaker (auto-advance in updateTimers handles this)
+      // Only HOST can trigger voting via manual button
+      // Note: Auto-voting is now handled in updateTimers() when timer = 0 for last speaker
     } else if (room.value.status === 'VOTING' && votingStartTime.value) {
       const startTime = new Date(votingStartTime.value)
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
