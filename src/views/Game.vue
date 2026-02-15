@@ -83,7 +83,7 @@
                     class="bg-green-600 border-4 border-green-800 px-8 py-4 hover:bg-green-500 transition-all text-lg font-black score-display text-white"
                     style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
                   >
-                    ▶ I'M DONE - NEXT SPEAKER
+                    ✅ I'M DONE
                   </button>
                 </div>
                 
@@ -434,7 +434,9 @@ const mostVotedPlayerWord = computed(() => {
 })
 
 const currentSpeaker = computed(() => {
-  if (!speakerOrder.value.length || currentSpeakerIndex.value >= speakerOrder.value.length) return null
+  if (!speakerOrder.value.length || currentSpeakerIndex.value >= speakerOrder.value.length) {
+    return null
+  }
   return speakerOrder.value[currentSpeakerIndex.value]
 })
 
@@ -591,10 +593,24 @@ const loadGameData = async () => {
       speakerOrder.value = roomData.speaker_order
         .map(userId => participants.value.find(p => p.user_id === userId))
         .filter(p => p) // Remove any null entries
-      currentSpeakerIndex.value = 0
+      
+      console.log('📋 Speaker order loaded:', {
+        order: speakerOrder.value.map(p => p.users?.full_name)
+      });
     } else {
       // Fallback: empty speaker order (should not happen after migration)
       speakerOrder.value = []
+      console.warn('⚠️ No speaker order in database!');
+    }
+    
+    // Load current speaker index from database (IMPORTANT: do this AFTER speaker order)
+    if (roomData.current_speaker_index !== undefined) {
+      currentSpeakerIndex.value = roomData.current_speaker_index
+      console.log('🎯 Current speaker index from DB:', currentSpeakerIndex.value);
+      console.log('🎯 Current speaker:', speakerOrder.value[currentSpeakerIndex.value]?.users?.full_name);
+    } else {
+      currentSpeakerIndex.value = 0
+      console.log('🎯 Current speaker index defaulted to 0');
     }
     
     // Get my data
@@ -602,6 +618,11 @@ const loadGameData = async () => {
     if (me) {
       isImposter.value = me.is_imposter || false
       myWord.value = me.word || ''
+      console.log('👤 My user data:', {
+        userId: currentUser.value.id,
+        username: me.users?.full_name,
+        isMyTurn: currentSpeaker.value?.user_id === currentUser.value?.id
+      });
     }
     
     // Load chat
@@ -754,18 +775,26 @@ const updateTimers = () => {
   const maxTime = (speakerOrder.value.length * timePerPlayer) + (extendCount.value * 30)
   timeLeft.value = Math.max(0, maxTime - elapsed)
   
-  // Auto-advance to next speaker when time runs out (host only)
-  if (speakTimeLeft.value === 0 && isHost.value && currentSpeakerIndex.value < speakerOrder.value.length - 1) {
-    const nextIndex = currentSpeakerIndex.value + 1
-    console.log(`⏰ Time's up! Auto-advancing to speaker ${nextIndex}`)
-    
-    supabase
-      .from('rooms')
-      .update({ current_speaker_index: nextIndex })
-      .eq('id', room.value.id)
-      .then(({ error }) => {
-        if (error) console.error('Error auto-advancing speaker:', error)
-      })
+  // Auto-advance logic (host only)
+  if (speakTimeLeft.value === 0 && isHost.value) {
+    // If not the last speaker, advance to next
+    if (currentSpeakerIndex.value < speakerOrder.value.length - 1) {
+      const nextIndex = currentSpeakerIndex.value + 1
+      console.log(`⏰ Time's up! Auto-advancing to speaker ${nextIndex}`)
+      
+      supabase
+        .from('rooms')
+        .update({ current_speaker_index: nextIndex })
+        .eq('id', room.value.id)
+        .then(({ error }) => {
+          if (error) console.error('Error auto-advancing speaker:', error)
+        })
+    } 
+    // If last speaker, start voting
+    else if (currentSpeakerIndex.value === speakerOrder.value.length - 1) {
+      console.log(`⏰ Last speaker's time is up! Starting voting...`)
+      startVoting()
+    }
   }
 }
 
@@ -777,9 +806,15 @@ const startTimer = () => {
       // Update timers (countdown only, speaker index from database)
       updateTimers()
       
-      // Check if all speakers finished
-      if (currentSpeakerIndex.value >= speakerOrder.value.length) {
-        if (isHost.value) {
+      // Check if all speakers finished (only trigger if index is beyond the last speaker)
+      // This happens when:
+      // 1. Last speaker clicks "I'M DONE" (index stays at length-1)
+      // 2. Timer runs out for last speaker (auto-advance would have moved to length)
+      // Only HOST can trigger voting
+      if (currentSpeakerIndex.value >= speakerOrder.value.length - 1 && isHost.value) {
+        // Check if last speaker's time is up or if they clicked done
+        if (speakTimeLeft.value === 0 || currentSpeakerIndex.value === speakerOrder.value.length) {
+          console.log('✅ All speakers finished! Starting voting...');
           startVoting()
         }
       }
@@ -810,8 +845,17 @@ const nextSpeaker = async () => {
     console.group('⏭️ NEXT SPEAKER');
     console.log('Current speaker index:', currentSpeakerIndex.value);
     console.log('Current speaker:', currentSpeaker.value?.users?.full_name);
+    console.log('Total speakers:', speakerOrder.value.length);
     
-    // Move to next speaker index (direct database update like voting)
+    // If this is the last speaker, just mark as done (don't increment)
+    // Host will trigger voting when they see all speakers are done
+    if (currentSpeakerIndex.value >= speakerOrder.value.length - 1) {
+      console.log('✅ Last speaker finished! Waiting for host to start voting...');
+      console.groupEnd();
+      return
+    }
+    
+    // Move to next speaker index
     const targetIndex = currentSpeakerIndex.value + 1
     
     console.log('Target index:', targetIndex);
