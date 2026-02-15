@@ -921,6 +921,7 @@ const finishGame = async () => {
     // Update scores - NEW LOGIC
     for (const participant of participants.value) {
       let scoreToAdd = 0
+      let didWin = false
       
       // Find their vote
       const theirVote = votes.find(v => v.voter_id === participant.user_id)
@@ -931,9 +932,11 @@ const finishGame = async () => {
         if (!impostorsCaught) {
           // Impostor survived -> WIN
           scoreToAdd = 20
+          didWin = true
         } else {
           // Impostor caught -> LOSE
           scoreToAdd = 0
+          didWin = false
         }
       } else {
         // CITIZEN SCORING
@@ -941,8 +944,10 @@ const finishGame = async () => {
           // Citizens won (impostor caught)
           if (votedForImpostor) {
             scoreToAdd = 15 // Voted correctly for impostor
+            didWin = true
           } else {
             scoreToAdd = 5 // Impostor caught but they voted wrong
+            didWin = false
           }
         } else {
           // Citizens lost (impostor survived)
@@ -951,13 +956,33 @@ const finishGame = async () => {
           } else {
             scoreToAdd = 0 // Voted wrong and lost
           }
+          didWin = false
         }
       }
       
+      // Update room participant score
       await supabase
         .from('room_participants')
         .update({ score: (participant.score || 0) + scoreToAdd })
         .eq('id', participant.id)
+      
+      // Update user's total score in users table (for leaderboard)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('total_score, games_played, games_won')
+        .eq('id', participant.user_id)
+        .single()
+      
+      await supabase
+        .from('users')
+        .update({ 
+          total_score: (userData?.total_score || 0) + scoreToAdd,
+          games_played: (userData?.games_played || 0) + 1,
+          games_won: (userData?.games_won || 0) + (didWin ? 1 : 0)
+        })
+        .eq('id', participant.user_id)
+      
+      console.log(`✅ ${participant.users.full_name}: +${scoreToAdd} points | Total: ${(userData?.total_score || 0) + scoreToAdd} | ${didWin ? 'WON' : 'LOST'}`)
     }
     
     // Update room status
