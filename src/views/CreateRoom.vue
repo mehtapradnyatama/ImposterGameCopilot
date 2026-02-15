@@ -75,54 +75,6 @@
           </div>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
-          
-          <!-- Discussion Time - Yellow -->
-          <div class="bg-yellow-500 border-4 border-yellow-700 p-6" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
-            <label class="block text-xs mb-4 text-black score-display text-center">
-              ▲ TIME PER PLAYER
-            </label>
-            <div class="text-center mb-4">
-              <span class="text-5xl font-black text-black score-display">{{ Math.floor(discussionTime / 60) }}:{{ String(discussionTime % 60).padStart(2, '0') }}</span>
-            </div>
-            <input 
-              v-model.number="discussionTime"
-              type="range"
-              min="30"
-              max="300"
-              step="30"
-              class="w-full h-3 bg-yellow-700 appearance-none cursor-pointer slider-retro"
-            />
-            <div class="flex justify-between text-xs text-black mt-2 score-display">
-              <span>30S</span>
-              <span>5MIN</span>
-            </div>
-          </div>
-
-          <!-- Voting Time - Green -->
-          <div class="bg-green-500 border-4 border-green-700 p-6" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
-            <label class="block text-xs mb-4 text-white score-display text-center">
-              ♦ VOTING
-            </label>
-            <div class="text-center mb-4">
-              <span class="text-6xl font-black text-white score-display">{{ votingTime }}</span>
-              <span class="text-sm text-white score-display">S</span>
-            </div>
-            <input 
-              v-model.number="votingTime"
-              type="range"
-              min="20"
-              max="120"
-              step="10"
-              class="w-full h-3 bg-green-700 appearance-none cursor-pointer slider-retro"
-            />
-            <div class="flex justify-between text-xs text-white mt-2 score-display">
-              <span>20S</span>
-              <span>2MIN</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Voice Chat Toggle -->
         <div class="flex items-center bg-cyan-600 border-4 border-cyan-800 p-6 cursor-pointer" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
           <input 
@@ -168,8 +120,6 @@ const router = useRouter()
 const roomName = ref('')
 const maxPlayers = ref(8)
 const impostorCount = ref(2)
-const discussionTime = ref(120)
-const votingTime = ref(60)
 const voiceChatEnabled = ref(true)
 const loading = ref(false)
 
@@ -226,8 +176,6 @@ const createRoom = async () => {
         min_players: 3, // Always 3
         max_players: maxPlayers.value,
         impostor_count: impostorCount.value,
-        discussion_time: discussionTime.value,
-        voting_time: votingTime.value,
         voice_chat_enabled: voiceChatEnabled.value,
         status: 'WAITING',
         topic: null // Random, no selection

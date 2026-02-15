@@ -352,11 +352,9 @@ const myWord = ref('')
 const isImposter = ref(false)
 const myVote = ref(null)
 const hasVoted = ref(false)
-const timeLeft = ref(0) // For voting timer only
 const newMessage = ref('')
 const voteResults = ref([])
 const voteCount = ref(0)
-const votingStartTime = ref(null)
 
 // Speaking order (for display only, no enforcement)
 const speakerOrder = ref([]) // Randomized order of participants
@@ -373,7 +371,6 @@ let roomSubscription = null
 let participantSubscription = null
 let chatSubscription = null
 let voteSubscription = null
-let timerInterval = null
 
 const isHost = computed(() => {
   if (!currentUser.value || !room.value) return false
@@ -473,7 +470,6 @@ onMounted(async () => {
   
   await loadGameData()
   subscribeToUpdates()
-  startTimer()
 })
 
 onUnmounted(() => {
@@ -481,7 +477,6 @@ onUnmounted(() => {
   if (participantSubscription) participantSubscription.unsubscribe()
   if (chatSubscription) chatSubscription.unsubscribe()
   if (voteSubscription) voteSubscription.unsubscribe()
-  if (timerInterval) clearInterval(timerInterval)
   
   // Cleanup voice chat
   if (isVoiceConnected.value) {
@@ -602,7 +597,6 @@ const subscribeToUpdates = () => {
       }
       
       if (payload.new.status === 'VOTING') {
-        votingStartTime.value = new Date().toISOString()
         hasVoted.value = false
         myVote.value = null
       } else if (payload.new.status === 'FINISHED') {
@@ -659,24 +653,6 @@ const subscribeToUpdates = () => {
       await checkAllVoted()
     })
     .subscribe()
-}
-
-// Helper function to calculate time left for current speaker
-const startTimer = () => {
-  timerInterval = setInterval(() => {
-    if (!room.value) return
-    
-    // Only handle voting timer now
-    if (room.value.status === 'VOTING' && votingStartTime.value) {
-      const startTime = new Date(votingStartTime.value)
-      const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      timeLeft.value = Math.max(0, room.value.voting_time - elapsed)
-      
-      if (timeLeft.value === 0 && isHost.value) {
-        finishGame()
-      }
-    }
-  }, 1000)
 }
 
 const startVoting = async () => {
