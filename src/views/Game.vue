@@ -641,6 +641,7 @@ const subscribeToUpdates = () => {
     .subscribe()
   
   // Subscribe to votes
+  console.log('📡 Setting up vote subscription for room:', room.value.id);
   voteSubscription = supabase
     .channel(`votes:${room.value.id}`)
     .on('postgres_changes', {
@@ -648,11 +649,23 @@ const subscribeToUpdates = () => {
       schema: 'public',
       table: 'votes',
       filter: `room_id=eq.${room.value.id}`
-    }, async () => {
+    }, async (payload) => {
+      console.log('🔔 VOTE SUBSCRIPTION FIRED!');
+      console.log('New vote payload:', payload);
+      console.log('Current user:', currentUser.value?.id);
+      console.log('Is host:', isHost.value);
+      
       await loadVoteCount()
       await checkAllVoted()
     })
-    .subscribe()
+    .subscribe((status) => {
+      console.log('📡 Vote subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Successfully subscribed to votes channel');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('❌ Vote subscription failed:', status);
+      }
+    })
 }
 
 const startVoting = async () => {
@@ -823,12 +836,27 @@ const submitVote = async (votedUserId) => {
 }
 
 const loadVoteCount = async () => {
-  const { data: votes } = await supabase
+  console.log('📊 Loading vote count for room:', room.value.id);
+  
+  const { data: votes, error } = await supabase
     .from('votes')
     .select('id')
     .eq('room_id', room.value.id)
   
-  voteCount.value = votes?.length || 0
+  if (error) {
+    console.error('❌ Error loading vote count:', error);
+    return;
+  }
+  
+  const oldCount = voteCount.value;
+  voteCount.value = votes?.length || 0;
+  
+  console.log('📊 Vote count updated:', {
+    oldCount,
+    newCount: voteCount.value,
+    totalParticipants: participants.value.length,
+    allVoted: voteCount.value >= participants.value.length
+  });
 }
 
 const checkAllVoted = async () => {
