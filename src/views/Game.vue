@@ -745,8 +745,20 @@ const submitVote = async (votedUserId) => {
       return
     }
     
-    // Use UPSERT to insert or update vote
-    console.log('2. Attempting UPSERT (insert or update):');
+    // Check if user already has a vote (to decide INSERT vs UPDATE)
+    console.log('2. Checking for existing vote...');
+    const { data: existingVote, error: checkError } = await supabase
+      .from('votes')
+      .select('id, voted_for_id')
+      .eq('room_id', room.value.id)
+      .eq('voter_id', currentUser.value.id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking existing vote:', checkError);
+      throw checkError;
+    }
+
     const voteData = {
       room_id: room.value.id,
       voter_id: currentUser.value.id,
@@ -754,40 +766,33 @@ const submitVote = async (votedUserId) => {
     };
     console.log('   Vote data:', voteData);
     
-    const { data, error } = await supabase
-      .from('votes')
-      .upsert(voteData, {
-        onConflict: 'room_id,voter_id'
-      })
-      .select();
-    
-    if (error) {
-      console.error('❌ UPSERT FAILED:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      throw error;
+    let data, error;
+
+    if (existingVote) {
+      // UPDATE existing vote
+      console.log('3. Updating existing vote (ID:', existingVote.id, ')');
+      const result = await supabase
+        .from('votes')
+        .update({ voted_for_id: votedUserId })
+        .eq('id', existingVote.id)
+        .select();
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // INSERT new vote
+      console.log('3. Inserting new vote');
+      const result = await supabase
+        .from('votes')
+        .insert(voteData)
+        .select();
+      
+      data = result.data;
+      error = result.error;
     }
-    
-    const wasChange = hasVoted.value;
-    console.log(wasChange ? '🔄 Vote changed successfully:' : '✅ Vote submitted successfully:', data);
-    sfx.vote() // Play vote sound
-    myVote.value = votedUserId
-    hasVoted.value = true
-    
-    // Immediately update vote count
-    await loadVoteCount()
-    
-    // Check if all players voted (all clients call this, but only host executes)
-    await checkAllVoted()
-    
-    console.groupEnd();
-  } catch (error) {
-    console.error('💥 CATCH ERROR:', {
-      name: error.name,
-      message: error.message,
+
+    if (error) {
+      console.error('❌ Vote operation failed:', {
       stack: error.stack
     });
     sfx.error() // Play error sound
