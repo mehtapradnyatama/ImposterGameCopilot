@@ -366,6 +366,7 @@ const isTalking = ref(false)
 const isAlwaysOn = ref(false)
 const localStream = ref(null)
 const peerConnections = ref({}) // userId -> RTCPeerConnection
+const remoteAudios = ref({}) // userId -> Audio element
 const voiceChannel = ref(null)
 
 let roomSubscription = null
@@ -1047,6 +1048,7 @@ const toggleVoiceChat = async () => {
   } else {
     // Connect voice chat
     try {
+      console.log('🎤 Requesting microphone access...')
       // Get microphone access
       localStream.value = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -1056,9 +1058,14 @@ const toggleVoiceChat = async () => {
         } 
       })
       
+      console.log('✅ Microphone access granted:', localStream.value.getAudioTracks().length, 'tracks')
+      
       // Mute initially if not always-on
       if (!isAlwaysOn.value) {
         localStream.value.getAudioTracks().forEach(track => track.enabled = false)
+        console.log('🔇 Microphone muted (push-to-talk mode)')
+      } else {
+        console.log('🔊 Microphone active (always-on mode)')
       }
       
       // Create voice channel for signaling
@@ -1087,6 +1094,12 @@ const toggleVoiceChat = async () => {
           if (peerConnections.value[payload.userId]) {
             peerConnections.value[payload.userId].close()
             delete peerConnections.value[payload.userId]
+          }
+          // Cleanup remote audio
+          if (remoteAudios.value[payload.userId]) {
+            remoteAudios.value[payload.userId].pause()
+            remoteAudios.value[payload.userId].srcObject = null
+            delete remoteAudios.value[payload.userId]
           }
         })
         .subscribe(async (status) => {
@@ -1129,6 +1142,13 @@ const disconnectVoiceChat = () => {
   Object.values(peerConnections.value).forEach(pc => pc.close())
   peerConnections.value = {}
   
+  // Stop and cleanup all remote audio elements
+  Object.values(remoteAudios.value).forEach(audio => {
+    audio.pause()
+    audio.srcObject = null
+  })
+  remoteAudios.value = {}
+  
   // Notify others and unsubscribe from channel
   if (voiceChannel.value) {
     voiceChannel.value.send({
@@ -1166,9 +1186,27 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
   
   // Handle incoming audio
   pc.ontrack = (event) => {
-    const remoteAudio = new Audio()
-    remoteAudio.srcObject = event.streams[0]
-    remoteAudio.play().catch(e => console.error('Error playing remote audio:', e))
+    console.log('Received remote track from:', remoteUserId)
+    if (!remoteAudios.value[remoteUserId]) {
+      const remoteAudio = new Audio()
+      remoteAudio.srcObject = event.streams[0]
+      remoteAudio.autoplay = true
+      remoteAudio.volume = 1.0
+      remoteAudios.value[remoteUserId] = remoteAudio
+      
+      // Play with user interaction fallback
+      remoteAudio.play().catch(e => {
+        console.error('Error playing remote audio:', e)
+        // Retry on next user interaction
+        document.addEventListener('click', () => {
+          remoteAudio.play().catch(console.error)
+        }, { once: true })
+      })
+    } else {
+      // Update existing audio stream
+      remoteAudios.value[remoteUserId].srcObject = event.streams[0]
+      remoteAudios.value[remoteUserId].play().catch(console.error)
+    }
   }
   
   // Handle ICE candidates
