@@ -2,86 +2,74 @@
   <div class="min-h-screen p-4 pixel-grid">
     <div class="max-w-5xl mx-auto space-y-6">
       <!-- Room Header - Arcade Title -->
-      <div class="bg-black border-8 border-yellow-400 p-8 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
-        <div class="flex justify-between items-start mb-6">
-          <div>
-            <div class="text-yellow-400 text-xs mb-4 animate-blink score-display">
+      <div class="bg-black border-4 sm:border-8 border-yellow-400 p-4 sm:p-6 md:p-8 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
+        <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+          <div class="flex-1 min-w-0">
+            <div class="text-yellow-400 text-xs mb-2 sm:mb-4 animate-blink score-display">
               █ GAME LOBBY █
             </div>
-            <h1 class="text-4xl font-black mb-3 text-yellow-400 score-display uppercase">{{ room?.name }}</h1>
-            <div class="flex items-center gap-3">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-black mb-2 sm:mb-3 text-yellow-400 score-display uppercase break-words">{{ room?.name }}</h1>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <span class="text-white text-xs score-display">ROOM CODE:</span>
-              <div class="bg-gray-900 border-4 border-yellow-400 px-6 py-3" style="box-shadow: 4px 4px 0 rgba(234, 179, 8, 0.8);">
-                <span class="text-3xl font-black text-yellow-400 tracking-widest score-display">{{ code }}</span>
+              <div class="bg-gray-900 border-2 sm:border-4 border-yellow-400 px-4 sm:px-6 py-2 sm:py-3" style="box-shadow: 4px 4px 0 rgba(234, 179, 8, 0.8);">
+                <span class="text-2xl sm:text-3xl font-black text-yellow-400 tracking-widest score-display">{{ code }}</span>
               </div>
             </div>
           </div>
           <button 
             @click="copyRoomCode"
-            class="bg-cyan-500 border-4 border-cyan-700 px-8 py-4 font-black text-lg hover:bg-cyan-400 transition-all score-display text-white btn-retro"
+            class="bg-cyan-500 border-2 sm:border-4 border-cyan-700 px-6 sm:px-8 py-3 sm:py-4 font-black text-base sm:text-lg hover:bg-cyan-400 transition-all score-display text-white btn-retro self-start sm:self-auto"
           >
             <span class="flex items-center gap-2">
-              <span class="text-xl">■</span>
+              <span class="text-lg sm:text-xl">■</span>
               <span>COPY</span>
             </span>
           </button>
         </div>
         
         <!-- Stats Panels - Flat Colored Blocks -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-blue-600 border-4 border-blue-800 p-5 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+        <div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+          <div class="bg-blue-600 border-4 border-blue-800 p-5 sm:p-6 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
             <span class="text-white text-xs font-black block mb-2 text-center score-display">
               ■ PLAYERS
             </span>
-            <span class="font-black text-5xl text-white block text-center score-display">{{ participants.length }}<span class="text-gray-300 text-3xl">/{{ room?.max_players }}</span></span>
+            <span class="font-black text-4xl sm:text-5xl text-white block text-center score-display">{{ participants.length }}<span class="text-gray-300 text-2xl sm:text-3xl">/{{ room?.max_players }}</span></span>
           </div>
-          <div class="bg-red-600 border-4 border-red-800 p-5 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8); animation-delay: 0.1s;">
+          <div class="bg-red-600 border-4 border-red-800 p-5 sm:p-6 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8); animation-delay: 0.1s;">
             <span class="text-white text-xs font-black block mb-2 text-center score-display">
               ● IMPOSTORS
             </span>
-            <span class="font-black text-5xl text-white block text-center score-display">{{ room?.impostor_count || 2 }}</span>
-          </div>
-          <div class="bg-yellow-500 border-4 border-yellow-700 p-5 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8); animation-delay: 0.2s;">
-            <span class="text-black text-xs font-black block mb-2 text-center score-display">
-              ▲ DISCUSSION
-            </span>
-            <span class="font-black text-4xl text-black block text-center score-display">{{ Math.floor((room?.discussion_time || 0) / 60) }}:{{ String((room?.discussion_time || 0) % 60).padStart(2, '0') }}</span>
-          </div>
-          <div class="bg-green-500 border-4 border-green-700 p-5 animate-slide-in-left" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8); animation-delay: 0.3s;">
-            <span class="text-white text-xs font-black block mb-2 text-center score-display">
-              ♦ VOTING
-            </span>
-            <span class="font-black text-5xl text-white block text-center score-display">{{ room?.voting_time }}<span class="text-2xl">S</span></span>
+            <span class="font-black text-4xl sm:text-5xl text-white block text-center score-display">{{ room?.impostor_count || 2 }}</span>
           </div>
         </div>
       </div>
 
       <!-- Players List - Arcade Character Select -->
-      <div class="bg-gray-900 border-8 border-cyan-400 p-8 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(34, 211, 238, 0.5); animation-delay: 0.1s;">
-        <h2 class="text-3xl font-black mb-6 flex items-center gap-3 text-cyan-400 score-display">
-          <span class="text-2xl">■</span>
+      <div class="bg-gray-900 border-4 sm:border-8 border-cyan-400 p-4 sm:p-6 md:p-8 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(34, 211, 238, 0.5); animation-delay: 0.1s;">
+        <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 flex items-center gap-3 text-cyan-400 score-display">
+          <span class="text-xl sm:text-2xl">■</span>
           <span>PLAYERS</span>
-          <span class="text-white text-xl">({{ participants.length }})</span>
+          <span class="text-white text-lg sm:text-xl">({{ participants.length }})</span>
         </h2>
-        <div class="grid md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div 
             v-for="participant in participants" 
             :key="participant.id"
-            class="flex items-center gap-4 bg-black p-5 border-4 transition-all animate-slide-in-left"
+            class="flex items-center gap-3 sm:gap-4 bg-black p-3 sm:p-4 md:p-5 border-2 sm:border-4 transition-all animate-slide-in-left"
             :class="participant.is_host ? 'border-yellow-400' : 'border-cyan-500'"
             :style="`box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8); animation-delay: ${0.1 + participants.indexOf(participant) * 0.05}s;`"
           >
-            <div class="relative">
-              <div v-if="participant.is_host" class="absolute -top-3 -right-3 w-8 h-8 bg-yellow-500 border-2 border-yellow-700 flex items-center justify-center text-xl animate-pixel-bounce">👑</div>
+            <div class="relative flex-shrink-0">
+              <div v-if="participant.is_host" class="absolute -top-2 sm:-top-3 -right-2 sm:-right-3 w-6 h-6 sm:w-8 sm:h-8 bg-yellow-500 border-2 border-yellow-700 flex items-center justify-center text-base sm:text-xl animate-pixel-bounce">👑</div>
               <img 
                 :src="participant.users.avatar_url" 
-                class="w-16 h-16 border-4"
+                class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 sm:border-4"
                 :class="participant.is_host ? 'border-yellow-400' : 'border-cyan-400'"
                 style="image-rendering: pixelated;"
               />
             </div>
-            <div class="flex-1">
-              <p class="font-black text-xl text-white score-display">{{ participant.users.full_name.toUpperCase() }}</p>
+            <div class="flex-1 min-w-0">
+              <p class="font-black text-base sm:text-lg md:text-xl text-white score-display break-words">{{ participant.users.full_name.toUpperCase() }}</p>
               <p v-if="participant.is_host" class="text-xs font-black text-yellow-400 score-display mt-1">★ HOST</p>
               <p v-else class="text-xs font-black text-cyan-400 score-display mt-1">PLAYER</p>
             </div>
@@ -90,44 +78,44 @@
       </div>
 
       <!-- Actions - Arcade Buttons -->
-      <div class="flex gap-6 justify-center flex-wrap">
+      <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-stretch sm:items-center">
         <button 
           v-if="isHost"
           @click="startGame"
           :disabled="participants.length < 3 || loading"
-          class="bg-green-500 border-4 border-green-700 px-12 py-6 text-3xl hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed score-display text-white btn-retro"
+          class="bg-green-500 border-4 border-green-700 px-8 sm:px-12 py-5 sm:py-6 text-2xl sm:text-3xl hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed score-display text-white btn-retro"
         >
-          <span class="flex items-center gap-3">
-            <span class="animate-blink text-4xl">▶</span>
+          <span class="flex items-center justify-center gap-3">
+            <span class="animate-blink text-3xl sm:text-4xl">▶</span>
             <span>{{ loading ? 'LOADING...' : 'START GAME' }}</span>
           </span>
         </button>
         
         <button 
           @click="leaveRoom"
-          class="bg-red-600 border-4 border-red-800 px-12 py-6 text-3xl hover:bg-red-500 transition-all score-display text-white btn-retro"
+          class="bg-red-600 border-4 border-red-800 px-8 sm:px-12 py-5 sm:py-6 text-2xl sm:text-3xl hover:bg-red-500 transition-all score-display text-white btn-retro"
         >
-          <span class="flex items-center gap-3">
-            <span class="text-4xl">■</span>
+          <span class="flex items-center justify-center gap-3">
+            <span class="text-3xl sm:text-4xl">■</span>
             <span>LEAVE ROOM</span>
           </span>
         </button>
       </div>
 
       <!-- Status Messages - Arcade Style -->
-      <div class="text-center">
-        <div v-if="!isHost && participants.length >= 3" class="bg-blue-600 border-4 border-blue-800 p-6 inline-block" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
-          <p class="text-white font-black text-xl score-display animate-blink flex items-center justify-center gap-2">
-            <span class="text-2xl">●</span>
+      <div class="text-center px-4">
+        <div v-if="!isHost && participants.length >= 3" class="bg-blue-600 border-2 sm:border-4 border-blue-800 p-4 sm:p-6 inline-block" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+          <p class="text-white font-black text-base sm:text-xl score-display animate-blink flex items-center justify-center gap-2">
+            <span class="text-xl sm:text-2xl">●</span>
             WAITING FOR HOST...
           </p>
         </div>
         
-        <div v-if="participants.length < 3" class="bg-red-600 border-4 border-red-800 p-6 inline-block animate-pixel-pulse" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
-          <p class="text-white font-black text-xl score-display flex items-center justify-center gap-2">
-            <span class="text-3xl animate-blink">!</span>
+        <div v-if="participants.length < 3" class="bg-red-600 border-2 sm:border-4 border-red-800 p-4 sm:p-6 inline-block animate-pixel-pulse" style="box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);">
+          <p class="text-white font-black text-base sm:text-xl score-display flex items-center justify-center gap-2">
+            <span class="text-2xl sm:text-3xl animate-blink">!</span>
             NEED {{ 3 - participants.length }} MORE PLAYER{{ 3 - participants.length > 1 ? 'S' : '' }}
-            <span class="text-3xl animate-blink">!</span>
+            <span class="text-2xl sm:text-3xl animate-blink">!</span>
           </p>
         </div>
       </div>

@@ -2,16 +2,16 @@
   <div class="min-h-screen p-4 pixel-grid">
     <div class="max-w-7xl mx-auto">
       <!-- Game Header - Arcade Stage Display -->
-      <div class="bg-black border-8 border-yellow-400 p-6 mb-4 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
-        <div class="flex justify-between items-center">
-          <div>
-            <h1 class="text-2xl font-black mb-1 text-yellow-400 score-display uppercase">{{ room?.name }}</h1>
+      <div class="bg-black border-4 sm:border-8 border-yellow-400 p-4 sm:p-6 mb-4 animate-slide-in-up" style="box-shadow: 8px 8px 0 rgba(234, 179, 8, 0.5);">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div class="flex-1 min-w-0">
+            <h1 class="text-xl sm:text-2xl font-black mb-1 text-yellow-400 score-display uppercase break-words">{{ room?.name }}</h1>
             <p class="text-xs text-white score-display">{{ participants.length }} PLAYERS ● {{ impostorCount }} IMPOSTOR{{ impostorCount > 1 ? 'S' : '' }}</p>
           </div>
-          <div class="text-right">
+          <div class="text-left sm:text-right">
             <p class="text-xs text-gray-400 score-display mb-1">■ STAGE</p>
-            <div class="px-6 py-2 border-4" :class="phaseColorClass" :style="phaseBoxShadow">
-              <p class="text-xl font-black score-display" :class="phaseTextColor">{{ phaseText.toUpperCase() }}</p>
+            <div class="px-4 sm:px-6 py-2 border-2 sm:border-4" :class="phaseColorClass" :style="phaseBoxShadow">
+              <p class="text-lg sm:text-xl font-black score-display" :class="phaseTextColor">{{ phaseText.toUpperCase() }}</p>
             </div>
           </div>
         </div>
@@ -39,19 +39,19 @@
                 <p class="text-xs font-black mb-4 score-display uppercase text-yellow-400">■ SPEAKING ORDER ■</p>
                 <p class="text-gray-400 text-xs mb-4 score-display">COORDINATE VIA VOICE/LIVE CHAT. HOST STARTS VOTING WHEN READY.</p>
                 
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2 sm:gap-3">
                   <div 
                     v-for="(speaker, index) in speakerOrder" 
                     :key="speaker.user_id"
-                    class="bg-gray-900 border-4 p-3"
+                    class="bg-gray-900 border-2 sm:border-4 p-2 sm:p-3"
                     :class="speaker.user_id === currentUser?.id ? 'border-cyan-400' : 'border-gray-700'"
                     :style="speaker.user_id === currentUser?.id ? 'box-shadow: 4px 4px 0 rgba(34, 211, 238, 0.6);' : 'box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);'"
                   >
-                    <div class="text-2xl font-black score-display mb-2" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-500'">
+                    <div class="text-xl sm:text-2xl font-black score-display mb-2" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-500'">
                       {{ index + 1 }}
                     </div>
-                    <img :src="speaker.users.avatar_url" class="w-12 h-12 mx-auto border-2 mb-2" :class="speaker.user_id === currentUser?.id ? 'border-cyan-400' : 'border-gray-600'" style="image-rendering: pixelated;" />
-                    <p class="text-xs font-black score-display" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-400'">
+                    <img :src="speaker.users.avatar_url" class="w-10 h-10 sm:w-12 sm:h-12 mx-auto border-2 mb-2" :class="speaker.user_id === currentUser?.id ? 'border-cyan-400' : 'border-gray-600'" style="image-rendering: pixelated;" />
+                    <p class="text-xs font-black score-display break-words" :class="speaker.user_id === currentUser?.id ? 'text-cyan-400' : 'text-gray-400'">
                       {{ speaker.users.full_name.toUpperCase() }}
                     </p>
                     <p v-if="speaker.user_id === currentUser?.id" class="text-xs score-display text-cyan-400 mt-1">(YOU)</p>
@@ -60,9 +60,9 @@
               </div>
               
               <!-- Your Word -->
-              <div class="bg-gray-900 border-4 p-8 border-cyan-600" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
+              <div class="bg-gray-900 border-4 p-4 sm:p-6 md:p-8 border-cyan-600" style="box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);">
                 <p class="text-gray-400 text-xs mb-3 score-display uppercase">▼ YOUR WORD ▼</p>
-                <p class="text-6xl md:text-7xl font-black score-display text-cyan-400">{{ myWord }}</p>
+                <p class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black score-display text-cyan-400 break-words">{{ myWord }}</p>
               </div>
               
               <div class="mt-6 px-4 py-3 border-4 bg-yellow-900 border-yellow-700">
@@ -129,32 +129,32 @@
           </div>
 
           <!-- STAGE 3: Voting Phase -->
-          <div v-if="room?.status === 'VOTING'" class="bg-gray-900 border-4 border-yellow-500 p-6" style="box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.5);">
+          <div v-if="room?.status === 'VOTING'" class="bg-gray-900 border-4 border-yellow-500 p-4 sm:p-6" style="box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.5);">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-yellow-500 border-4 border-yellow-700 flex items-center justify-center font-black text-xl text-black score-display">3</div>
-              <h2 class="text-2xl font-black text-yellow-400 score-display">STAGE 3: VOTING</h2>
+              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500 border-2 sm:border-4 border-yellow-700 flex items-center justify-center font-black text-lg sm:text-xl text-black score-display">3</div>
+              <h2 class="text-xl sm:text-2xl font-black text-yellow-400 score-display">STAGE 3: VOTING</h2>
             </div>
-            <div class="bg-yellow-900 border-4 border-yellow-700 p-4 mb-5">
+            <div class="bg-yellow-900 border-2 sm:border-4 border-yellow-700 p-3 sm:p-4 mb-4 sm:mb-5">
               <p class="text-white text-xs leading-relaxed score-display uppercase">VOTE FOR WHO YOU THINK IS THE IMPOSTOR!</p>
             </div>
             
             <!-- Voting Buttons - Arcade Character Cards -->
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <button
                 v-for="participant in participants"
                 :key="participant.id"
                 @click="submitVote(participant.user_id)"
                 :disabled="hasVoted || participant.user_id === currentUser?.id"
-                class="flex items-center gap-4 p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-4"
+                class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-2 sm:border-4"
                 :class="myVote === participant.user_id ? 'bg-yellow-500 border-yellow-700' : 'bg-black border-white hover:border-yellow-400'"
                 :style="myVote === participant.user_id ? 'box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
               >
-                <img :src="participant.users.avatar_url" class="w-14 h-14 border-4" :class="myVote === participant.user_id ? 'border-yellow-900' : 'border-cyan-400'" style="image-rendering: pixelated;" />
-                <div class="flex-1 text-left">
-                  <span class="font-black text-base score-display" :class="myVote === participant.user_id ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
+                <img :src="participant.users.avatar_url" class="w-12 h-12 sm:w-14 sm:h-14 border-2 sm:border-4" :class="myVote === participant.user_id ? 'border-yellow-900' : 'border-cyan-400'" style="image-rendering: pixelated;" />
+                <div class="flex-1 text-left min-w-0">
+                  <span class="font-black text-sm sm:text-base score-display break-words" :class="myVote === participant.user_id ? 'text-black' : 'text-white'">{{ participant.users.full_name.toUpperCase() }}</span>
                   <p v-if="participant.user_id === currentUser?.id" class="text-xs score-display" :class="myVote === participant.user_id ? 'text-gray-700' : 'text-gray-400'">(YOU)</p>
                 </div>
-                <span v-if="myVote === participant.user_id" class="text-2xl animate-blink">▶</span>
+                <span v-if="myVote === participant.user_id" class="text-xl sm:text-2xl animate-blink flex-shrink-0">▶</span>
               </button>
             </div>
             
