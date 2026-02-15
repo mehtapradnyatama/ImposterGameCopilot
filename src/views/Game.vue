@@ -367,6 +367,8 @@ const isAlwaysOn = ref(false)
 const localStream = ref(null)
 const peerConnections = ref({}) // userId -> RTCPeerConnection
 const remoteAudios = ref({}) // userId -> Audio element
+const voiceUsers = ref(new Set()) // Set of user IDs in voice chat
+const pendingIceCandidates = ref({}) // userId -> Array of ICE candidates (buffer until remote description set)
 const voiceChannel = ref(null)
 
 let roomSubscription = null
@@ -1087,10 +1089,22 @@ const toggleVoiceChat = async () => {
         })
         .on('broadcast', { event: 'user-joined' }, async ({ payload }) => {
           if (payload.userId !== currentUser.value.id) {
-            await createPeerConnection(payload.userId, true)
+            console.log('👥 User joined voice:', payload.userId)
+            voiceUsers.value.add(payload.userId)
+            // Use deterministic initiator: user with smaller ID initiates
+            const shouldInitiate = currentUser.value.id < payload.userId
+            if (shouldInitiate) {
+              console.log('🔊 Creating peer connection as initiator to:', payload.userId)
+              await new Promise(resolve => setTimeout(resolve, 200))
+              await createPeerConnection(payload.userId, true)
+            } else {
+              console.log('⏳ Waiting for offer from:', payload.userId)
+            }
           }
         })
         .on('broadcast', { event: 'user-left' }, ({ payload }) => {
+          console.log('🚪 User left voice:', payload.userId)
+          voiceUsers.value.delete(payload.userId)
           if (peerConnections.value[payload.userId]) {
             peerConnections.value[payload.userId].close()
             delete peerConnections.value[payload.userId]
@@ -1101,10 +1115,18 @@ const toggleVoiceChat = async () => {
             remoteAudios.value[payload.userId].srcObject = null
             delete remoteAudios.value[payload.userId]
           }
+          // Cleanup pending ICE candidates
+          if (pendingIceCandidates.value[payload.userId]) {
+            delete pendingIceCandidates.value[payload.userId]
+          }
         })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
+            console.log('✅ Voice channel subscribed')
             isVoiceConnected.value = true
+            
+            // Add self to voice users
+            voiceUsers.value.add(currentUser.value.id)
             
             // Notify others that we joined
             await voiceChannel.value.send({
@@ -1113,14 +1135,9 @@ const toggleVoiceChat = async () => {
               payload: { userId: currentUser.value.id }
             })
             
-            // Create peer connections for existing participants
-            for (const participant of participants.value) {
-              if (participant.user_id !== currentUser.value.id) {
-                // Small delay to avoid race conditions
-                await new Promise(resolve => setTimeout(resolve, 100))
-                await createPeerConnection(participant.user_id, true)
-              }
-            }
+            console.log('📶 Broadcast user-joined, waiting for responses...')
+            // Don't create peer connections here - wait for others to respond
+            // Only users with smaller IDs will initiate connections to us
           }
         })
     } catch (error) {
@@ -1132,6 +1149,8 @@ const toggleVoiceChat = async () => {
 }
 
 const disconnectVoiceChat = () => {
+  console.log('🔌 Disconnecting voice chat')
+  
   // Stop all tracks
   if (localStream.value) {
     localStream.value.getTracks().forEach(track => track.stop())
@@ -1149,6 +1168,12 @@ const disconnectVoiceChat = () => {
   })
   remoteAudios.value = {}
   
+  // Clear pending ICE candidates
+  pendingIceCandidates.value = {}
+  
+  // Clear voice users
+  voiceUsers.value.clear()
+  
   // Notify others and unsubscribe from channel
   if (voiceChannel.value) {
     voiceChannel.value.send({
@@ -1165,28 +1190,60 @@ const disconnectVoiceChat = () => {
 }
 
 const createPeerConnection = async (remoteUserId, isInitiator) => {
-  if (peerConnections.value[remoteUserId]) return
+  if (peerConnections.value[remoteUserId]) {
+    console.log('⚠️ Peer connection already exists for:', remoteUserId)
+    return
+  }
+  
+  console.log(`🔗 Creating peer connection to ${remoteUserId} (initiator: ${isInitiator})`)
   
   const configuration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' }
     ]
   }
   
   const pc = new RTCPeerConnection(configuration)
   peerConnections.value[remoteUserId] = pc
   
+  // Connection state monitoring
+  pc.onconnectionstatechange = () => {
+    console.log(`[${remoteUserId}] Connection state: ${pc.connectionState}`)
+    if (pc.connectionState === 'failed') {
+      console.error(`❌ Connection failed with ${remoteUserId}`)
+    } else if (pc.connectionState === 'connected') {
+      console.log(`✅ Connected successfully with ${remoteUserId}`)
+    }
+  }
+  
+  pc.oniceconnectionstatechange = () => {
+    console.log(`[${remoteUserId}] ICE connection state: ${pc.iceConnectionState}`)
+    if (pc.iceConnectionState === 'failed') {
+      console.error(`❌ ICE connection failed with ${remoteUserId}`)
+    } else if (pc.iceConnectionState === 'connected') {
+      console.log(`✅ ICE connected with ${remoteUserId}`)
+    }
+  }
+  
+  pc.onsignalingstatechange = () => {
+    console.log(`[${remoteUserId}] Signaling state: ${pc.signalingState}`)
+  }
+  
   // Add local stream tracks
   if (localStream.value) {
     localStream.value.getTracks().forEach(track => {
       pc.addTrack(track, localStream.value)
+      console.log(`🎤 Added track to peer connection with ${remoteUserId}`)
     })
   }
   
   // Handle incoming audio
   pc.ontrack = (event) => {
-    console.log('Received remote track from:', remoteUserId)
+    console.log('🎧 Received remote track from:', remoteUserId)
     if (!remoteAudios.value[remoteUserId]) {
       const remoteAudio = new Audio()
       remoteAudio.srcObject = event.streams[0]
@@ -1195,7 +1252,9 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
       remoteAudios.value[remoteUserId] = remoteAudio
       
       // Play with user interaction fallback
-      remoteAudio.play().catch(e => {
+      remoteAudio.play().then(() => {
+        console.log(`✅ Playing audio from ${remoteUserId}`)
+      }).catch(e => {
         console.error('Error playing remote audio:', e)
         // Retry on next user interaction
         document.addEventListener('click', () => {
@@ -1212,6 +1271,7 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
   // Handle ICE candidates
   pc.onicecandidate = (event) => {
     if (event.candidate && voiceChannel.value) {
+      console.log(`🧊 Sending ICE candidate to ${remoteUserId}`)
       voiceChannel.value.send({
         type: 'broadcast',
         event: 'ice-candidate',
@@ -1221,14 +1281,18 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
           candidate: event.candidate
         }
       })
+    } else if (!event.candidate) {
+      console.log(`🏁 ICE gathering complete for ${remoteUserId}`)
     }
   }
   
   // Create offer if we're the initiator
   if (isInitiator) {
     try {
+      console.log(`📝 Creating offer for ${remoteUserId}`)
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
+      console.log(`📤 Sending offer to ${remoteUserId}`)
       
       await voiceChannel.value.send({
         type: 'broadcast',
@@ -1247,6 +1311,7 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
 
 const handleOffer = async ({ from, offer }) => {
   try {
+    console.log('📥 Received offer from:', from)
     // Create peer connection if not exists
     if (!peerConnections.value[from]) {
       await createPeerConnection(from, false)
@@ -1254,10 +1319,25 @@ const handleOffer = async ({ from, offer }) => {
     
     const pc = peerConnections.value[from]
     await pc.setRemoteDescription(new RTCSessionDescription(offer))
+    console.log('✅ Remote description set for:', from)
+    
+    // Flush buffered ICE candidates
+    if (pendingIceCandidates.value[from]) {
+      console.log(`🧊 Flushing ${pendingIceCandidates.value[from].length} buffered ICE candidates for:`, from)
+      for (const candidate of pendingIceCandidates.value[from]) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate))
+        } catch (e) {
+          console.error('Error adding buffered ICE candidate:', e)
+        }
+      }
+      delete pendingIceCandidates.value[from]
+    }
     
     // Create answer
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+    console.log('📤 Sending answer to:', from)
     
     // Send answer back
     await voiceChannel.value.send({
@@ -1276,9 +1356,24 @@ const handleOffer = async ({ from, offer }) => {
 
 const handleAnswer = async ({ from, answer }) => {
   try {
+    console.log('📥 Received answer from:', from)
     const pc = peerConnections.value[from]
     if (pc) {
       await pc.setRemoteDescription(new RTCSessionDescription(answer))
+      console.log('✅ Remote description set for:', from)
+      
+      // Flush buffered ICE candidates
+      if (pendingIceCandidates.value[from]) {
+        console.log(`🧊 Flushing ${pendingIceCandidates.value[from].length} buffered ICE candidates for:`, from)
+        for (const candidate of pendingIceCandidates.value[from]) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate))
+          } catch (e) {
+            console.error('Error adding buffered ICE candidate:', e)
+          }
+        }
+        delete pendingIceCandidates.value[from]
+      }
     }
   } catch (error) {
     console.error('Error handling answer:', error)
@@ -1289,7 +1384,17 @@ const handleIceCandidate = async ({ from, candidate }) => {
   try {
     const pc = peerConnections.value[from]
     if (pc && candidate) {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate))
+      // Buffer ICE candidates if remote description is not set yet
+      if (!pc.remoteDescription || !pc.remoteDescription.type) {
+        console.log('🧊 Buffering ICE candidate from:', from, '(no remote description yet)')
+        if (!pendingIceCandidates.value[from]) {
+          pendingIceCandidates.value[from] = []
+        }
+        pendingIceCandidates.value[from].push(candidate)
+      } else {
+        console.log('🧊 Adding ICE candidate from:', from)
+        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+      }
     }
   } catch (error) {
     console.error('Error handling ICE candidate:', error)
