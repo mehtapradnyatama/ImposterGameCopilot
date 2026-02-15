@@ -1,5 +1,16 @@
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center p-4 pixel-grid">
+    
+    <!-- BGM Toggle Button (Fixed Top-Right) -->
+    <button 
+      @click="toggleBGM"
+      class="fixed top-4 right-4 z-50 bg-black border-4 px-4 py-2 transition-all hover:scale-110 score-display text-sm"
+      :class="isBgmPlaying ? 'border-green-400 text-green-400' : 'border-gray-600 text-gray-600'"
+      style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+    >
+      {{ isBgmPlaying ? '🔊 BGM ON' : '🔇 BGM OFF' }}
+    </button>
+    
     <div class="max-w-4xl w-full text-center space-y-8">
       
       <!-- Arcade Title Screen -->
@@ -89,6 +100,7 @@
           <div class="space-y-4">
             <router-link 
               to="/create-room"
+              @click="handleNavigation"
               class="block bg-green-500 border-4 border-green-700 px-8 py-6 text-2xl hover:bg-green-400 transition-all mx-auto max-w-md score-display btn-retro"
             >
               <span class="animate-blink">▶</span> START GAME
@@ -96,6 +108,7 @@
             
             <router-link 
               to="/join-room"
+              @click="handleNavigation"
               class="block bg-blue-500 border-4 border-blue-700 px-8 py-6 text-2xl hover:bg-blue-400 transition-all mx-auto max-w-md score-display btn-retro"
             >
               <span class="animate-blink">▶</span> JOIN GAME
@@ -103,6 +116,7 @@
 
             <router-link 
               to="/leaderboard"
+              @click="handleNavigation"
               class="block bg-yellow-500 text-black border-4 border-yellow-700 px-8 py-6 text-xl hover:bg-yellow-400 transition-all mx-auto max-w-md score-display btn-retro"
             >
               ★ HIGH SCORES ★
@@ -129,9 +143,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAudio, sfx } from '@/composables/useAudio'
 
 const user = ref(null)
 const loading = ref(false)
+
+// Audio controls
+const { playBGM, toggleBGM, isBgmPlaying, setBGMVolume } = useAudio()
 
 onMounted(async () => {
   const { data: { session } } = await supabase.auth.getSession()
@@ -150,9 +168,13 @@ onMounted(async () => {
     })
   }
   user.value = session?.user || null
+  
+  // Start BGM (Note: might not work until user clicks due to browser autoplay policy)
+  setTimeout(() => playBGM('game-bgm'), 500)
 })
 
 const signInWithGoogle = async () => {
+  sfx.click() // Play click sound
   loading.value = true
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -160,12 +182,20 @@ const signInWithGoogle = async () => {
       redirectTo: `${window.location.origin}/auth/callback`
     }
   })
-  if (error) alert(error.message)
+  if (error) {
+    sfx.error() // Play error sound
+    alert(error.message)
+  }
   loading.value = false
 }
 
 const signOut = async () => {
+  sfx.click()
   await supabase.auth.signOut()
   user.value = null
+}
+
+const handleNavigation = () => {
+  sfx.click()
 }
 </script>
