@@ -2,28 +2,52 @@
   <div id="app" class="min-h-screen">
     
     <!-- Global BGM Controls (Fixed Top-Right) -->
-    <div class="fixed top-4 right-4 z-50 bg-black border-4 border-yellow-400 p-4 space-y-2" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-      <!-- Toggle Button -->
+    <div class="fixed top-4 right-4 z-50">
+      <!-- Collapsed: Small Button -->
       <button 
-        @click="toggleBGM"
-        class="w-full px-4 py-2 transition-all hover:scale-105 score-display text-sm border-2"
-        :class="isBgmPlaying ? 'border-green-400 text-green-400 bg-green-950' : 'border-gray-600 text-gray-600 bg-gray-900'"
+        v-if="!showControls"
+        @click="showControls = true"
+        class="bg-black border-4 border-yellow-400 p-3 transition-all hover:scale-110 score-display text-2xl"
+        style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+        :class="isBgmPlaying ? 'text-green-400' : 'text-gray-600'"
       >
-        {{ isBgmPlaying ? '🔊 BGM ON' : '🔇 BGM OFF' }}
+        {{ isBgmPlaying ? '🎵' : '🔇' }}
       </button>
       
-      <!-- Volume Slider -->
-      <div class="flex items-center gap-2 text-yellow-400">
-        <span class="text-xs score-display">VOL</span>
-        <input 
-          type="range" 
-          min="0" 
-          max="100" 
-          v-model="bgmVolume"
-          @input="setBGMVolume(bgmVolume / 100)"
-          class="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-        />
-        <span class="text-xs score-display w-8">{{ bgmVolume }}</span>
+      <!-- Expanded: Full Controls -->
+      <div v-else class="bg-black border-4 border-yellow-400 p-4 space-y-2 animate-slide-in-left" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <span class="text-yellow-400 text-xs score-display">AUDIO</span>
+          <button 
+            @click="showControls = false"
+            class="text-gray-400 hover:text-white text-xs score-display"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <!-- Toggle Button -->
+        <button 
+          @click="toggleBGM"
+          class="w-full px-4 py-2 transition-all hover:scale-105 score-display text-sm border-2"
+          :class="isBgmPlaying ? 'border-green-400 text-green-400 bg-green-950' : 'border-gray-600 text-gray-600 bg-gray-900'"
+        >
+          {{ isBgmPlaying ? '🔊 BGM ON' : '🔇 BGM OFF' }}
+        </button>
+        
+        <!-- Volume Slider -->
+        <div class="flex items-center gap-2 text-yellow-400">
+          <span class="text-xs score-display">VOL</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            v-model="bgmVolume"
+            @input="setBGMVolume(bgmVolume / 100)"
+            class="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+          <span class="text-xs score-display w-8">{{ bgmVolume }}</span>
+        </div>
       </div>
     </div>
     
@@ -39,6 +63,7 @@ import { useAudio } from '@/composables/useAudio'
 
 const router = useRouter()
 const bgmVolume = ref(50) // Default volume 50%
+const showControls = ref(false) // Controls hidden by default
 
 // Audio controls
 const { playBGM, toggleBGM, isBgmPlaying, setBGMVolume } = useAudio()
