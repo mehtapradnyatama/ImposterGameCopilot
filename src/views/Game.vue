@@ -144,7 +144,7 @@
                 v-for="participant in participants"
                 :key="participant.id"
                 @click="submitVote(participant.user_id)"
-                :disabled="hasVoted || participant.user_id === currentUser?.id"
+                :disabled="participant.user_id === currentUser?.id"
                 class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-2 sm:border-4"
                 :class="myVote === participant.user_id ? 'bg-yellow-500 border-yellow-700' : 'bg-black border-white hover:border-yellow-400'"
                 :style="myVote === participant.user_id ? 'box-shadow: 6px 6px 0 rgba(234, 179, 8, 0.8);' : 'box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);'"
@@ -158,8 +158,8 @@
               </button>
             </div>
             
-            <div v-if="hasVoted" class="mt-5 bg-green-600 border-4 border-green-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
-              <p class="text-white font-black score-display text-xs">VOTE SUBMITTED! WAITING FOR OTHERS...</p>
+            <div v-if="hasVoted" class="mt-5 bg-blue-600 border-4 border-blue-800 p-4 text-center" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
+              <p class="text-white font-black score-display text-xs">VOTE SUBMITTED! CLICK ANOTHER PLAYER TO CHANGE YOUR VOTE</p>
             </div>
             <div class="text-center mt-3 px-4 py-2 bg-gray-800 border-4 border-gray-900 inline-block" style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);">
               <p class="text-white font-black score-display text-xs">{{ voteCount }}/{{ participants.length }} VOTED</p>
@@ -724,85 +724,29 @@ const submitVote = async (votedUserId) => {
   console.group('🗳️ SUBMIT VOTE DEBUG');
   console.log('1. Initial State:', {
     hasVoted: hasVoted.value,
+    previousVote: myVote.value,
     votingForSelf: votedUserId === currentUser.value.id,
     currentUserId: currentUser.value?.id,
     votedUserId: votedUserId
   });
   
-  if (hasVoted.value || votedUserId === currentUser.value.id) {
-    console.warn('❌ Cannot vote - already voted or voting for self');
+  // Only prevent voting for self
+  if (votedUserId === currentUser.value.id) {
+    console.warn('❌ Cannot vote for yourself');
     console.groupEnd();
     return
   }
   
   try {
-    // Check if already voted (prevent duplicate key error)
-    console.log('2. Checking existing vote...');
-    const { data: existingVote } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('room_id', room.value.id)
-      .eq('voter_id', currentUser.value.id)
-      .maybeSingle()
-    
-    if (existingVote) {
-      console.warn('⚠️ Already voted, skipping');
-      hasVoted.value = true
-      myVote.value = votedUserId
+    // Check if this is a vote change (voting for same person = no-op)
+    if (hasVoted.value && myVote.value === votedUserId) {
+      console.log('ℹ️ Already voted for this person, no change needed');
       console.groupEnd();
       return
     }
     
-    // Check authentication
-    console.log('3. Auth Check:');
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('   Session:', session ? 'EXISTS' : 'NULL');
-    console.log('   User ID:', session?.user?.id);
-    console.log('   Email:', session?.user?.email);
-    
-    // Check if user is participant
-    console.log('4. Participant Check:');
-    const { data: participantCheck, error: participantError } = await supabase
-      .from('room_participants')
-      .select('*')
-      .eq('room_id', room.value.id)
-      .eq('user_id', currentUser.value.id)
-      .single();
-    
-    console.log('   Participant exists:', participantCheck ? 'YES' : 'NO');
-    if (participantError) {
-      console.error('   Participant error:', participantError);
-    }
-    
-    // Check room exists
-    console.log('5. Room Check:');
-    const { data: roomCheck, error: roomError } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('id', room.value.id)
-      .single();
-    
-    console.log('   Room exists:', roomCheck ? 'YES' : 'NO');
-    console.log('   Room status:', roomCheck?.status);
-    if (roomError) {
-      console.error('   Room error:', roomError);
-    }
-    
-    // Check policies
-    console.log('6. Policy Test - Try to read votes:');
-    const { data: votesRead, error: votesReadError } = await supabase
-      .from('votes')
-      .select('*')
-      .eq('room_id', room.value.id);
-    
-    console.log('   Can read votes:', votesReadError ? 'NO' : 'YES');
-    console.log('   Existing votes count:', votesRead?.length || 0);
-    if (votesReadError) {
-      console.error('   Read error:', votesReadError);
-    }
-    
-    // Attempt insert
-    console.log('7. Attempting INSERT:');
+    // Use UPSERT to insert or update vote
+    console.log('2. Attempting UPSERT (insert or update):');
     const voteData = {
       room_id: room.value.id,
       voter_id: currentUser.value.id,
@@ -810,10 +754,15 @@ const submitVote = async (votedUserId) => {
     };
     console.log('   Vote data:', voteData);
     
-    const { data, error } = await supabase.from('votes').insert(voteData).select();
+    const { data, error } = await supabase
+      .from('votes')
+      .upsert(voteData, {
+        onConflict: 'room_id,voter_id'
+      })
+      .select();
     
     if (error) {
-      console.error('❌ INSERT FAILED:', {
+      console.error('❌ UPSERT FAILED:', {
         message: error.message,
         details: error.details,
         hint: error.hint,
@@ -822,8 +771,9 @@ const submitVote = async (votedUserId) => {
       throw error;
     }
     
-    console.log('✅ Vote submitted successfully:', data);
-    sfx.vote() // Play vote sound on successful submission
+    const wasChange = hasVoted.value;
+    console.log(wasChange ? '🔄 Vote changed successfully:' : '✅ Vote submitted successfully:', data);
+    sfx.vote() // Play vote sound
     myVote.value = votedUserId
     hasVoted.value = true
     
@@ -1095,7 +1045,8 @@ const toggleVoiceChat = async () => {
             const shouldInitiate = currentUser.value.id < payload.userId
             if (shouldInitiate) {
               console.log('🔊 Creating peer connection as initiator to:', payload.userId)
-              await new Promise(resolve => setTimeout(resolve, 200))
+              // Increased delay for better stability with 5+ users
+              await new Promise(resolve => setTimeout(resolve, 500))
               await createPeerConnection(payload.userId, true)
             } else {
               console.log('⏳ Waiting for offer from:', payload.userId)
@@ -1210,13 +1161,46 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
   const pc = new RTCPeerConnection(configuration)
   peerConnections.value[remoteUserId] = pc
   
+  // Connection timeout: if not connected within 30 seconds, retry
+  const connectionTimeout = setTimeout(() => {
+    if (pc.connectionState !== 'connected' && pc.connectionState !== 'closed') {
+      console.warn(`⏰ Connection timeout with ${remoteUserId} (state: ${pc.connectionState})`)
+      // Trigger retry by closing connection
+      pc.close()
+    }
+  }, 30000)
+  
   // Connection state monitoring
   pc.onconnectionstatechange = () => {
     console.log(`[${remoteUserId}] Connection state: ${pc.connectionState}`)
     if (pc.connectionState === 'failed') {
       console.error(`❌ Connection failed with ${remoteUserId}`)
+      clearTimeout(connectionTimeout)
+      // Retry connection after 2 seconds
+      setTimeout(async () => {
+        if (peerConnections.value[remoteUserId] && 
+            peerConnections.value[remoteUserId].connectionState === 'failed') {
+          console.log(`🔄 Retrying connection to ${remoteUserId}`)
+          // Close and remove old connection
+          peerConnections.value[remoteUserId].close()
+          delete peerConnections.value[remoteUserId]
+          // Create new connection if we're still in voice chat
+          if (isVoiceConnected.value && voiceUsers.value.has(remoteUserId)) {
+            const shouldInitiate = currentUser.value.id < remoteUserId
+            if (shouldInitiate) {
+              await new Promise(resolve => setTimeout(resolve, 500))
+              await createPeerConnection(remoteUserId, true)
+            }
+          }
+        }
+      }, 2000)
     } else if (pc.connectionState === 'connected') {
       console.log(`✅ Connected successfully with ${remoteUserId}`)
+      clearTimeout(connectionTimeout)
+    } else if (pc.connectionState === 'disconnected') {
+      console.log(`⚠️ Disconnected from ${remoteUserId}, waiting for reconnection...`)
+    } else if (pc.connectionState === 'closed') {
+      clearTimeout(connectionTimeout)
     }
   }
   
@@ -1224,7 +1208,9 @@ const createPeerConnection = async (remoteUserId, isInitiator) => {
     console.log(`[${remoteUserId}] ICE connection state: ${pc.iceConnectionState}`)
     if (pc.iceConnectionState === 'failed') {
       console.error(`❌ ICE connection failed with ${remoteUserId}`)
-    } else if (pc.iceConnectionState === 'connected') {
+      // ICE restart (will trigger connection retry above)
+      pc.restartIce()
+    } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
       console.log(`✅ ICE connected with ${remoteUserId}`)
     }
   }
