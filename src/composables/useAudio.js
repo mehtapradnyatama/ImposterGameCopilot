@@ -103,11 +103,9 @@ export function useAudio() {
 // Convenience functions for common SFX
 export const sfx = {
   click: () => useAudio().playSFX('click', 0.3),
-  hover: () => useAudio().playSFX('hover', 0.2),
   success: () => useAudio().playSFX('success', 0.5),
   error: () => useAudio().playSFX('error', 0.5),
   vote: () => useAudio().playSFX('vote', 0.4),
   gameStart: () => useAudio().playSFX('game-start', 0.6),
   gameOver: () => useAudio().playSFX('game-over', 0.6),
-  timer: () => useAudio().playSFX('timer-tick', 0.3),
 }

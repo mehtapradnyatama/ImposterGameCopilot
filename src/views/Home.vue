@@ -113,14 +113,6 @@
             >
               <span class="animate-blink">▶</span> JOIN GAME
             </router-link>
-
-            <router-link 
-              to="/leaderboard"
-              @click="handleNavigation"
-              class="block bg-yellow-500 text-black border-4 border-yellow-700 px-8 py-6 text-xl hover:bg-yellow-400 transition-all mx-auto max-w-md score-display btn-retro"
-            >
-              ★ HIGH SCORES ★
-            </router-link>
           </div>
 
           <button 

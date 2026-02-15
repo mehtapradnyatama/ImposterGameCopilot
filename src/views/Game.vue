@@ -352,7 +352,6 @@ const myWord = ref('')
 const isImposter = ref(false)
 const myVote = ref(null)
 const hasVoted = ref(false)
-const hasUpdatedLeaderboard = ref(false) // Track if player updated their score for this game
 const newMessage = ref('')
 const voteResults = ref([])
 const voteCount = ref(0)
@@ -565,8 +564,6 @@ const loadGameData = async () => {
     // Load results if finished
     if (roomData.status === 'FINISHED') {
       await loadVoteResults()
-      // Update my leaderboard score if game already finished
-      await updateMyLeaderboardScore()
     }
     
     console.log('✅ Game data loaded successfully');
@@ -604,8 +601,6 @@ const subscribeToUpdates = () => {
         myVote.value = null
       } else if (payload.new.status === 'FINISHED') {
         await loadVoteResults()
-        // Each player updates their own leaderboard score (RLS policy enforced)
-        await updateMyLeaderboardScore()
       }
     })
     .subscribe()
@@ -864,120 +859,10 @@ const loadVoteCount = async () => {
   });
 }
 
-// NEW: Each player updates their own leaderboard score (called by all clients)
+// Leaderboard scoring removed - game results only shown on results screen
 const updateMyLeaderboardScore = async () => {
-  // Prevent duplicate updates
-  if (hasUpdatedLeaderboard.value) {
-    console.log('ℹ️ Already updated leaderboard for this game, skipping');
-    return
-  }
-  
-  try {
-    console.group('📊 UPDATE MY LEADERBOARD SCORE');
-    
-    // Get all votes
-    const { data: votes } = await supabase
-      .from('votes')
-      .select('*')
-      .eq('room_id', room.value.id)
-    
-    // Count votes
-    const voteCounts = {}
-    votes.forEach(vote => {
-      voteCounts[vote.voted_for_id] = (voteCounts[vote.voted_for_id] || 0) + 1
-    })
-    
-    // Find most voted
-    const sortedVotes = Object.entries(voteCounts).sort((a, b) => b[1] - a[1])
-    const mostVotedId = sortedVotes[0]?.[0]
-    
-    // Check if impostor was caught
-    const mostVoted = participants.value.find(p => p.user_id === mostVotedId)
-    const impostorsCaught = mostVoted?.is_imposter || false
-    
-    // Find my participant data
-    const me = participants.value.find(p => p.user_id === currentUser.value.id)
-    if (!me) {
-      console.error('❌ Could not find my participant data');
-      console.groupEnd();
-      return
-    }
-    
-    // Calculate my score
-    let scoreToAdd = 0
-    let didWin = false
-    
-    const myVoteData = votes.find(v => v.voter_id === currentUser.value.id)
-    const votedForImpostor = participants.value.find(p => p.user_id === myVoteData?.voted_for_id)?.is_imposter
-    
-    if (me.is_imposter) {
-      // IMPOSTOR SCORING
-      if (!impostorsCaught) {
-        scoreToAdd = 20  // Impostor survived
-        didWin = true
-      } else {
-        scoreToAdd = 0   // Impostor caught
-        didWin = false
-      }
-    } else {
-      // CITIZEN SCORING
-      if (impostorsCaught) {
-        if (votedForImpostor) {
-          scoreToAdd = 15  // Voted correctly
-          didWin = true
-        } else {
-          scoreToAdd = 5   // Impostor caught but voted wrong
-          didWin = false
-        }
-      } else {
-        if (votedForImpostor) {
-          scoreToAdd = 5   // Tried to vote impostor
-        } else {
-          scoreToAdd = 0   // Voted wrong and lost
-        }
-        didWin = false
-      }
-    }
-    
-    console.log('My score calculation:', { scoreToAdd, didWin, isImposter: me.is_imposter, impostorsCaught });
-    
-    // Get my current stats
-    const { data: userData, error: selectError } = await supabase
-      .from('users')
-      .select('total_score, games_played, games_won')
-      .eq('id', currentUser.value.id)
-      .single()
-    
-    if (selectError) {
-      console.error('❌ Error fetching my user data:', selectError)
-      console.groupEnd();
-      return
-    }
-    
-    console.log('My current stats:', userData)
-    
-    // Update MY leaderboard stats
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ 
-        total_score: (userData?.total_score || 0) + scoreToAdd,
-        games_played: (userData?.games_played || 0) + 1,
-        games_won: (userData?.games_won || 0) + (didWin ? 1 : 0)
-      })
-      .eq('id', currentUser.value.id)
-    
-    if (updateError) {
-      console.error('❌ ERROR updating my leaderboard score:', updateError)
-    } else {
-      console.log(`✅ Leaderboard updated: +${scoreToAdd} points | Total: ${(userData?.total_score || 0) + scoreToAdd} | ${didWin ? 'WON' : 'LOST'}`)
-      hasUpdatedLeaderboard.value = true // Mark as updated
-    }
-    
-    console.groupEnd();
-  } catch (error) {
-    console.error('💥 Error in updateMyLeaderboardScore:', error)
-    console.groupEnd();
-  }
+  // Function removed - no longer updating leaderboard
+  return
 }
 
 const checkAllVoted = async () => {

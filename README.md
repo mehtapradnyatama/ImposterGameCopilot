@@ -10,7 +10,6 @@ Multiplayer word guessing game built with Vue.js 3 where players must find the i
 - **🎨 Beautiful UI**: Stunning gradient design with smooth animations
 - **📱 Responsive**: Works perfectly on desktop, tablet, and mobile
 - **🔐 Google OAuth**: Secure authentication via Google
-- **🏆 Leaderboard**: Track top players and win rates
 
 ## 🛠️ Tech Stack
 
@@ -118,7 +117,6 @@ npm run build
 5. **Discussion Phase**: All players except the imposter see the secret word. Discuss to find the imposter!
 6. **Voting Phase**: Vote for who you think is the imposter
 7. **Results**: See if you found the imposter correctly
-8. Play multiple rounds and climb the leaderboard!
 
 ## 📁 Project Structure
 
@@ -130,8 +128,7 @@ npm run build
 │   │   ├── CreateRoom.vue
 │   │   ├── JoinRoom.vue
 │   │   ├── Lobby.vue
-│   │   ├── Game.vue
-│   │   └── Leaderboard.vue
+│   │   └── Game.vue
 │   ├── router/         # Vue Router config
 │   ├── lib/            # Utilities (Supabase client)
 │   ├── App.vue         # Root component
