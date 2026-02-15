@@ -807,10 +807,8 @@ const submitVote = async (votedUserId) => {
     // Immediately update vote count
     await loadVoteCount()
     
-    // Check if all players voted (host triggers finish)
-    if (isHost.value) {
-      await checkAllVoted()
-    }
+    // Check if all players voted (all clients call this, but only host executes)
+    await checkAllVoted()
     
     console.groupEnd();
   } catch (error) {
@@ -866,12 +864,17 @@ const checkAllVoted = async () => {
 const finishGame = async () => {
   if (!isHost.value || room.value.status === 'FINISHED') return
   
+  console.group('🏁 FINISH GAME');
+  console.log('Host finishing game...');
+  
   try {
     // Get all votes
     const { data: votes } = await supabase
       .from('votes')
       .select('*')
       .eq('room_id', room.value.id)
+    
+    console.log('Total votes:', votes?.length);
     
     // Count votes
     const voteCounts = {}
@@ -930,12 +933,22 @@ const finishGame = async () => {
     }
     
     // Update room status
-    await supabase
+    console.log('Updating room status to FINISHED...');
+    const { error: updateError } = await supabase
       .from('rooms')
       .update({ status: 'FINISHED' })
       .eq('id', room.value.id)
+    
+    if (updateError) {
+      console.error('Error updating room status:', updateError);
+      throw updateError;
+    }
+    
+    console.log('✅ Room status updated to FINISHED');
+    console.groupEnd();
   } catch (error) {
     console.error('Error finishing game:', error)
+    console.groupEnd();
   }
 }
 
