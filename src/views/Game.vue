@@ -273,10 +273,10 @@
               </div>
             </div>
 
-            <!-- Return Home Button -->
+            <!-- Return Home Button (Desktop only, mobile uses hamburger menu) -->
             <button 
               @click="returnHome"
-              class="w-full bg-purple-600 border-4 border-purple-800 px-6 py-4 text-xl hover:bg-purple-500 transition-all score-display text-white btn-retro"
+              class="hidden md:block w-full bg-purple-600 border-4 border-purple-800 px-6 py-4 text-xl hover:bg-purple-500 transition-all score-display text-white btn-retro"
               style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
             >
               <span class="flex items-center justify-center gap-2">
@@ -336,6 +336,18 @@
               </button>
             </form>
           </div>
+          
+          <!-- Desktop Back to Home Button -->
+          <button 
+            @click="returnHome"
+            class="hidden md:block w-full bg-purple-600 border-4 border-purple-800 px-4 py-3 text-sm hover:bg-purple-500 transition-all score-display text-white"
+            style="box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);"
+          >
+            <span class="flex items-center justify-center gap-2">
+              <span class="text-lg">◀</span>
+              <span>BACK TO HOME</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
