@@ -116,7 +116,7 @@
 
       <!-- Credits -->
       <div class="text-gray-600 text-xs score-display mt-12">
-        © 2026 ARCADE STUDIOS
+        © 2026 MEHTA PRADNYATAMA. ALL RIGHTS RESERVED.
       </div>
     </div>
   </div>
